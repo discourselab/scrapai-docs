@@ -397,33 +397,52 @@ From `README.md:222-234`:
 
 ### Permission Rules (Claude Code)
 
-Configured via `./scrapai setup`:
+Configured via `./scrapai setup`, which creates `.claude/settings.local.json`:
 
-```json .claude/permissions.json
+```json .claude/settings.local.json
 {
-  "allowed": [
-    {"tool": "Bash", "pattern": "./scrapai *"},
-    {"tool": "Read", "pattern": "**/*.md"},
-    {"tool": "Read", "pattern": "**/*.json"},
-    {"tool": "Read", "pattern": "data/**/*"},
-    {"tool": "Write", "pattern": "*.json"},
-    {"tool": "Write", "pattern": "sections.md"}
-  ],
-  "denied": [
-    {"tool": "Write", "pattern": "**/*.py"},
-    {"tool": "Edit", "pattern": "**/*.py"},
-    {"tool": "Bash", "pattern": "rm *"},
-    {"tool": "Bash", "pattern": "sudo *"},
-    {"tool": "Bash", "pattern": "docker *"}
-  ]
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "Update",
+      "Glob",
+      "Grep",
+      "Bash(./scrapai:*)",
+      "Bash(source:*)",
+      "Bash(sqlite3:*)",
+      "Bash(psql:*)",
+      "Bash(xvfb-run:*)"
+    ],
+    "deny": [
+      "Edit(scrapai)",
+      "Update(scrapai)",
+      "Edit(.claude/*)",
+      "Update(.claude/*)",
+      "Write(**/*.py)",
+      "Edit(**/*.py)",
+      "Update(**/*.py)",
+      "MultiEdit(**/*.py)",
+      "Write(.env)",
+      "Write(secrets/**)",
+      "Write(config/**/*.key)",
+      "Write(**/*password*)",
+      "Write(**/*secret*)",
+      "WebFetch",
+      "WebSearch",
+      "Bash(rm:*)"
+    ]
+  }
 }
 ```
 
 **What the agent can do:**
 
-- Run `./scrapai` commands
-- Read documentation and configs
-- Write JSON configs and analysis files
+- Run `./scrapai` commands, database clients, and allowed shell commands
+- Read any file (Python, JSON, configs, documentation)
+- Write, edit, and update JSON configs and analysis files
+- Use file search tools (Glob, Grep)
 
 **What the agent cannot do:**
 

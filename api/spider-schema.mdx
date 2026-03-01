@@ -3,7 +3,7 @@ title: Spider JSON Schema
 description: Complete spider configuration schema reference
 ---
 
-Complete JSON schema for spider configuration. Import spiders from JSON files using `scrapai import <file> --project <name>`.
+Complete JSON schema for spider configuration. Import spiders from JSON files using `scrapai spiders import <file> --project <name>`.
 
 ## Root Schema
 
@@ -223,7 +223,7 @@ Defined callbacks: parse_article
 ## Import Command
 
 ```bash
-scrapai import spider.json --project myproject
+scrapai spiders import spider.json --project myproject
 ```
 
 Validation errors will be displayed with specific field paths and error messages.

@@ -40,11 +40,7 @@ Inspect a website URL.
 </ParamField>
 
 <ParamField path="--browser" type="flag">
-  Use browser for JavaScript-rendered sites (Playwright).
-</ParamField>
-
-<ParamField path="--cloudflare" type="flag">
-  Use Cloudflare bypass mode (nodriver).
+  Use browser automation for JavaScript-rendered sites and Cloudflare bypass. Automatically handles browser challenges and renders dynamic content.
 </ParamField>
 
 <ParamField path="--log-level" type="choice" default="info">
@@ -118,37 +114,31 @@ Analysis saved to: data/myproject/inspect/spa_site_com/
 Browser mode waits for JavaScript to execute and renders the final DOM. This is the HTML you should analyze for extraction selectors.
 </Note>
 
-#### Cloudflare Mode
+The `--browser` flag automatically handles both JavaScript rendering and Cloudflare bypass when needed.
 
-Bypass Cloudflare protection with nodriver:
-
-```bash
-./scrapai inspect https://protected-site.com --project myproject --cloudflare
-```
-
-**Use for:**
-- Sites with Cloudflare challenge pages
-- Sites requiring browser fingerprinting
-- Sites that block headless browsers
+**Additional browser mode features:**
+- Automatic Cloudflare challenge detection and bypass
+- Cookie extraction for session persistence
+- Browser fingerprinting resistance
 
 **Linux (headless server):**
 
-Requires xvfb:
+Requires xvfb for browser automation:
 
 ```bash
-xvfb-run -a ./scrapai inspect https://protected-site.com --cloudflare
+xvfb-run -a ./scrapai inspect https://protected-site.com --project myproject --browser
 ```
 
-Or install xvfb:
+Install xvfb if needed:
 
 ```bash
 sudo apt-get install xvfb
 ```
 
-**macOS/Windows:**
+**Output when Cloudflare is detected:**
 
 ```bash
-🖥️  Display available - using native browser for Cloudflare bypass
+🖥️  Browser mode enabled
 
 Solving Cloudflare challenge...
 Challenge solved!
@@ -160,10 +150,6 @@ Analysis saved to: data/myproject/inspect/protected_site_com/
   • metadata.json
 ```
 
-<Warning>
-Cannot use both `--browser` and `--cloudflare` flags together. Choose one based on your needs.
-</Warning>
-
 ### Saved Files
 
 Inspection saves files to `data/<project>/inspect/<domain>/`:
@@ -172,8 +158,7 @@ Inspection saves files to `data/<project>/inspect/<domain>/`:
 
 Full HTML content:
 - **HTTP mode**: Raw HTML from server
-- **Browser mode**: Rendered HTML after JavaScript execution
-- **Cloudflare mode**: Final HTML after bypass
+- **Browser mode**: Rendered HTML after JavaScript execution, with automatic Cloudflare bypass when detected
 
 Use this file with the `analyze` command to discover CSS selectors.
 
@@ -196,7 +181,7 @@ Request metadata:
 }
 ```
 
-#### cookies.json (Cloudflare mode)
+#### cookies.json (Browser mode with Cloudflare)
 
 Cloudflare session cookies:
 
@@ -525,7 +510,7 @@ For Cloudflare bypass on headless servers:
 sudo apt-get install xvfb
 
 # Run with xvfb
-xvfb-run -a ./scrapai inspect https://site.com --cloudflare
+xvfb-run -a ./scrapai inspect https://site.com --browser
 ```
 
 Or check if xvfb is available:
@@ -536,14 +521,14 @@ which xvfb-run
 
 ### macOS/Windows
 
-Browser and Cloudflare modes use native display automatically.
+Browser mode uses native display automatically (no xvfb needed).
 
 ## Troubleshooting
 
-### Cloudflare Mode: No Display Available
+### Browser Mode: No Display Available
 
 ```bash
-❌ ERROR: Cloudflare bypass requires a display
+❌ ERROR: Browser mode requires a display
    No display available and xvfb not installed
 ```
 
@@ -551,7 +536,7 @@ Browser and Cloudflare modes use native display automatically.
 
 ```bash
 sudo apt-get install xvfb
-xvfb-run -a ./scrapai inspect https://site.com --cloudflare
+xvfb-run -a ./scrapai inspect https://site.com --browser
 ```
 
 ### Browser Launch Failed

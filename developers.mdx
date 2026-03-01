@@ -1,0 +1,400 @@
+---
+title: For Developers
+description: ScrapAI is built for developers who want control without repetition
+---
+
+ScrapAI doesn't replace developers. It removes the repetitive parts so you can focus on the hard problems.
+
+## You're Always in the Loop
+
+The agent doesn't just run off and do things. During site analysis, it writes detailed notes in `sections.md`: what URL patterns it found, what sections the site has, what extraction strategy it chose and why. Plain language, easy to read.
+
+You can review at any point, correct the agent's assumptions, and bring your expertise into the process.
+
+## Hand-Write, Edit, or Override Anything
+
+Write your own JSON configs from scratch. Edit AI-generated ones. Override settings per spider. Write custom callbacks with your own CSS/XPath selectors and data processors.
+
+```bash
+./scrapai spiders import my_config.json --project myproject
+```
+
+The command works the same whether a human or an agent wrote it. The AI is a tool in your workflow, not a replacement for it.
+
+## Consistency Across the Fleet
+
+When 5 developers write 100 spiders, you get 5 different styles, naming conventions, and quality levels. ScrapAI produces uniform configs with the same schema, validation, and structure.
+
+Easier to review, easier to debug, easier to onboard new people.
+
+## Architecture
+
+ScrapAI is an orchestration layer on top of Scrapy. Instead of writing a Python spider file per website, an AI agent generates a JSON config and stores it in a database. A single generic spider (`DatabaseSpider`) loads any config at runtime.
+
+```
+You (plain English) → AI Agent → JSON config → Database → Scrapy crawl
+                       (once)                               (forever)
+```
+
+### Component Overview
+
+| Component | What it does |
+|-----------|-------------|
+| `scrapai` | Entry point, auto-activates venv, delegates to CLI |
+| `cli/` | Click-based CLI: spiders, queue, crawl, show, export, inspect |
+| `spiders/database_spider.py` | Generic spider that loads config from database at runtime |
+| `spiders/sitemap_spider.py` | Sitemap-based spider for sites with XML sitemaps |
+| `core/extractors.py` | Extraction chain: newspaper, trafilatura, custom CSS, Playwright |
+| `core/models.py` | SQLAlchemy models: Spider, SpiderRule, SpiderSetting, ScrapedItem |
+| `handlers/cloudflare_handler.py` | Cloudflare bypass with cookie caching |
+| `middlewares.py` | SmartProxyMiddleware, direct-to-proxy escalation |
+| `pipelines.py` | Batched database writes and JSONL export |
+| `alembic/` | Database migrations |
+| `airflow/` | Production scheduling with Apache Airflow |
+
+## Codebase
+
+**Small and readable:** ~4,000 lines of code. Built on Scrapy, SQLAlchemy, Alembic — tools you already know. Read the whole thing in an afternoon.
+
+Measured with [pygount](https://github.com/roskakori/pygount), counting actual code lines only (no blanks, no comments, no docstrings). Tests, examples, and docs excluded.
+
+| Metric | Count |
+|--------|-------|
+| Files | 37 |
+| Code Lines | 4,028 |
+| Comment Lines | 895 |
+| Comment % | 14% |
+
+Compare this to other scraping frameworks:
+- **Scrapling:** 5,875 lines (21% comments)
+- **crawl4ai:** 26,850 lines (21% comments)
+
+ScrapAI is intentionally small. The complexity lives in Scrapy, SQLAlchemy, and the extraction libraries. Our contribution is the orchestration.
+
+## Writing Spider Configs
+
+Here's what an AI-generated spider config looks like:
+
+```json
+{
+  "name": "bbc_co_uk",
+  "allowed_domains": ["bbc.co.uk"],
+  "start_urls": ["https://www.bbc.co.uk/news"],
+  "rules": [
+    {
+      "allow": ["/news/articles/[^/]+$"],
+      "callback": "parse_article",
+      "follow": false
+    },
+    {
+      "allow": ["/news/?$"],
+      "follow": true
+    }
+  ],
+  "settings": {
+    "EXTRACTOR_ORDER": ["newspaper", "trafilatura"],
+    "DOWNLOAD_DELAY": 2
+  }
+}
+```
+
+You can write this by hand, no AI needed. See [Spider Schema](/api/spider-schema) for the complete specification.
+
+## Custom Extractors
+
+For non-article content (products, jobs, listings), write custom callbacks with field-level selectors:
+
+```json
+{
+  "callbacks": {
+    "parse_product": {
+      "extract": {
+        "title": {"css": "h1.product-name::text"},
+        "price": {
+          "css": "span.price::text",
+          "processors": [
+            {"type": "strip"},
+            {"type": "regex", "pattern": "\\$([\\d.]+)"},
+            {"type": "cast", "to": "float"}
+          ]
+        },
+        "rating": {
+          "css": "div.stars::attr(data-rating)",
+          "processors": [{"type": "cast", "to": "float"}]
+        }
+      }
+    }
+  }
+}
+```
+
+See [Custom Callbacks](/guides/custom-callbacks) for complete examples.
+
+## Database Schema
+
+All configuration lives in PostgreSQL (or SQLite for development):
+
+### Spider Table
+
+```sql
+CREATE TABLE spiders (
+    id INTEGER PRIMARY KEY,
+    name VARCHAR(255) UNIQUE NOT NULL,
+    project VARCHAR(255) NOT NULL,
+    allowed_domains JSON NOT NULL,
+    start_urls JSON NOT NULL,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+```
+
+### SpiderRule Table
+
+```sql
+CREATE TABLE spider_rules (
+    id INTEGER PRIMARY KEY,
+    spider_id INTEGER REFERENCES spiders(id),
+    allow_patterns JSON,
+    deny_patterns JSON,
+    callback VARCHAR(255),
+    follow BOOLEAN,
+    priority INTEGER
+);
+```
+
+### SpiderSetting Table
+
+```sql
+CREATE TABLE spider_settings (
+    id INTEGER PRIMARY KEY,
+    spider_id INTEGER REFERENCES spiders(id),
+    key VARCHAR(255) NOT NULL,
+    value TEXT NOT NULL
+);
+```
+
+### ScrapedItem Table
+
+```sql
+CREATE TABLE scraped_items (
+    id INTEGER PRIMARY KEY,
+    spider_name VARCHAR(255),
+    project VARCHAR(255),
+    url TEXT,
+    title TEXT,
+    content TEXT,
+    author VARCHAR(255),
+    published_date TIMESTAMP,
+    metadata_json JSON,
+    scraped_at TIMESTAMP
+);
+```
+
+## Extending ScrapAI
+
+### Adding a New Extractor
+
+Create a new extractor class in `core/extractors.py`:
+
+```python
+from core.extractors import BaseExtractor
+
+class MyCustomExtractor(BaseExtractor):
+    def extract(self, response):
+        return {
+            'title': response.css('h1::text').get(),
+            'content': response.css('article::text').getall(),
+            'author': response.css('.author::text').get(),
+            'published_date': None
+        }
+```
+
+Register it in the extraction chain:
+
+```json
+{
+  "settings": {
+    "EXTRACTOR_ORDER": ["my_custom", "newspaper", "trafilatura"]
+  }
+}
+```
+
+### Adding Custom Middleware
+
+Add middleware to `middlewares.py`:
+
+```python
+class MyCustomMiddleware:
+    def process_request(self, request, spider):
+        # Modify request before it's sent
+        return None
+
+    def process_response(self, request, response, spider):
+        # Modify response after it's received
+        return response
+```
+
+Enable it in `scrapy_settings.py`:
+
+```python
+DOWNLOADER_MIDDLEWARES = {
+    'middlewares.MyCustomMiddleware': 350,
+}
+```
+
+### Adding CLI Commands
+
+Add commands to `cli/`:
+
+```python
+# cli/mycommand.py
+import click
+
+@click.command()
+@click.argument('spider_name')
+@click.option('--project', required=True)
+def mycommand(spider_name, project):
+    """My custom command"""
+    click.echo(f"Running command for {spider_name}")
+```
+
+Register in `cli/__init__.py`:
+
+```python
+from cli.mycommand import mycommand
+
+cli.add_command(mycommand)
+```
+
+## Storage Modes
+
+**Test mode** (`--limit N`): saves to database, inspect via `show` command
+
+```bash
+./scrapai crawl myspider --project news --limit 10
+./scrapai show myspider --project news
+```
+
+**Production mode** (no limit): exports to timestamped JSONL files, enables checkpoint
+
+```bash
+./scrapai crawl myspider --project news
+# Creates: data/news/myspider/2026-03-01_143022.jsonl
+```
+
+## Migrating Existing Scrapers
+
+Point the agent at your existing Python scripts (Scrapy spiders, BeautifulSoup, Scrapling, whatever) and it'll read them, understand the extraction logic, and write the equivalent ScrapAI JSON config.
+
+```
+You: "Migrate my spider at scripts/bbc_spider.py to ScrapAI"
+Agent: [Reads Python, extracts URL patterns and selectors, writes JSON config, tests, saves to database]
+```
+
+Your existing scrapers keep running while you verify. No big bang migration required.
+
+## Security
+
+All input is validated through [Pydantic](https://docs.pydantic.dev/) schemas before it touches the database or the crawler:
+
+- **Spider configs:** strict schema validation (`extra="forbid"`), spider names restricted to `^[a-zA-Z0-9_-]+$`, callback names validated with reserved names blocked
+- **URLs:** HTTP/HTTPS only, private IP and localhost blocking (127.0.0.1, 10.x, 172.16.x, 192.168.x, 169.254.x), 2048-char limit
+- **Settings:** whitelisted extractor names, bounded concurrency (1-32), bounded delays (0-60s)
+- **SQL:** all queries through SQLAlchemy ORM with parameterized bindings; `db query` validates table names against a whitelist; UPDATE/DELETE require row count confirmation
+
+### Agent Safety
+
+When you pair an AI agent with a scraping framework, the agent can potentially modify code, run arbitrary commands, and interact with untrusted web content. This isn't theoretical. In February 2026, an [OpenClaw agent deleted 200+ emails](https://techcrunch.com/2026/02/23/a-meta-ai-security-researcher-said-an-openclaw-agent-ran-amok-on-her-inbox/) after context compaction caused it to lose safety constraints.
+
+ScrapAI's approach: **the agent writes config, not code.**
+
+- With Claude Code, permission rules block all Python file modifications (`Write/Edit/Update/MultiEdit(**/*.py)`), sensitive files (`.env`, `secrets/**`), web access (`WebFetch`, `WebSearch`), and destructive shell commands at the tool level
+- The agent interacts only through a defined CLI (`./scrapai inspect`, `./scrapai spiders import`, etc.)
+- JSON configs are validated through Pydantic before import. Malformed configs, SSRF URLs, and injection attempts fail validation
+- At runtime, Scrapy executes deterministically with no AI in the loop
+
+The hard enforcement (allow/deny lists) is a Claude Code feature configured via `./scrapai setup`. Other agents get instructions but not enforcement. Only Claude Code guarantees the agent can't sidestep it.
+
+See [Comparison](/comparison#ai-agents--scraping-the-security-question) for the full analysis.
+
+## Contributing
+
+Contributions welcome. Areas where help would be particularly valuable:
+
+<CardGroup cols={2}>
+<Card title="Structural Change Detection" icon="magnifying-glass">
+Automatic detection of website structural changes
+</Card>
+<Card title="Extraction Modules" icon="table">
+Additional extraction modules (images, tables, PDFs)
+</Card>
+<Card title="Anti-Bot Support" icon="shield">
+Anti-bot support beyond Cloudflare
+</Card>
+<Card title="Authentication" icon="lock">
+Authentication and session management
+</Card>
+</CardGroup>
+
+### Development Setup
+
+```bash
+git clone https://github.com/discourselab/scrapai-cli.git
+cd scrapai-cli
+./scrapai setup
+./scrapai verify
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run specific test file
+pytest tests/test_extractors.py
+
+# Run with coverage
+pytest --cov=core --cov=cli --cov-report=html
+```
+
+### Code Style
+
+We follow PEP 8 with these exceptions:
+- Line length: 120 characters
+- Docstrings: Google style
+
+```bash
+# Format code
+black .
+
+# Check linting
+flake8 core/ cli/ spiders/
+```
+
+## Limitations
+
+Current limitations (pull requests welcome):
+
+- **Authentication:** No login support, no paywall bypass, no persistent sessions
+- **Advanced anti-bot:** We handle Cloudflare. Not DataDome, PerimeterX, Akamai, or CAPTCHA-solving services
+- **Interactive content:** No form submission, no click-based pagination
+
+The codebase is designed to be extended. The crawling infrastructure is done; what's missing is mostly parsing logic for additional content types.
+
+## Related Documentation
+
+<CardGroup cols={2}>
+<Card title="Architecture" icon="diagram-project" href="/concepts/architecture">
+Technical architecture and design decisions
+</Card>
+<Card title="Spider Schema" icon="file-code" href="/api/spider-schema">
+Complete JSON schema reference
+</Card>
+<Card title="Custom Callbacks" icon="code" href="/guides/custom-callbacks">
+Write custom field extractors
+</Card>
+<Card title="Security" icon="shield" href="/advanced/security">
+Security model and validation
+</Card>
+</CardGroup>

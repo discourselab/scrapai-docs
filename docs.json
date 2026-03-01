@@ -3,9 +3,15 @@
   "name": "ScrapAI",
   "theme": "aspen",
   "colors": {
-    "primary": "#2563eb",
-    "light": "#3b82f6",
-    "dark": "#1e40af"
+    "primary": "#ff7a65",
+    "light": "#ffa089",
+    "dark": "#e85d48"
+  },
+  "background": {
+    "color": {
+      "light": "#fff5f3",
+      "dark": "#1c1917"
+    }
   },
   "navbar": {
     "primary": {
@@ -28,7 +34,9 @@
             "pages": [
               "introduction",
               "quickstart",
-              "installation"
+              "installation",
+              "developers",
+              "comparison"
             ]
           },
           {
@@ -42,6 +50,7 @@
           {
             "group": "Guides",
             "pages": [
+              "examples",
               "guides/cloudflare-bypass",
               "guides/proxy-escalation",
               "guides/custom-callbacks",

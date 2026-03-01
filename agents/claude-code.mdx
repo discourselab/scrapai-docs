@@ -44,29 +44,60 @@ Other agents (OpenCode, Cursor, Windsurf) receive the same instructions but lack
 
 ## Permission Rules
 
-When you run `./scrapai setup`, it creates a `.claudeignore` file (or updates your Claude Code config) with these rules:
+When you run `./scrapai setup`, it creates `.claude/settings.local.json` with hard enforcement of allow/deny lists:
 
-```
-# Block Python file modifications
-Write(**/*.py)
-Edit(**/*.py)
-
-# Block destructive shell commands
-Bash(rm -rf *)
-Bash(git push --force)
+```json .claude/settings.local.json
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "Update",
+      "Glob",
+      "Grep",
+      "Bash(./scrapai:*)",
+      "Bash(source:*)",
+      "Bash(sqlite3:*)",
+      "Bash(psql:*)",
+      "Bash(xvfb-run:*)"
+    ],
+    "deny": [
+      "Edit(scrapai)",
+      "Update(scrapai)",
+      "Edit(.claude/*)",
+      "Update(.claude/*)",
+      "Write(**/*.py)",
+      "Edit(**/*.py)",
+      "Update(**/*.py)",
+      "MultiEdit(**/*.py)",
+      "Write(.env)",
+      "Write(secrets/**)",
+      "Write(config/**/*.key)",
+      "Write(**/*password*)",
+      "Write(**/*secret*)",
+      "WebFetch",
+      "WebSearch",
+      "Bash(rm:*)"
+    ]
+  }
+}
 ```
 
 ### What's Blocked
 
-- **Writing Python files:** The agent cannot create or overwrite `.py` files
-- **Editing Python files:** The agent cannot modify existing `.py` files
-- **Destructive commands:** Cannot run `rm -rf`, force pushes, or other destructive shell operations
+- **Python file modifications:** Cannot create, edit, or update any `.py` files
+- **Core file modifications:** Cannot edit the `scrapai` entry script or `.claude/*` settings
+- **Sensitive files:** Cannot write `.env`, secrets, API keys, passwords
+- **Web access:** WebFetch and WebSearch are blocked (agent works with local files only)
+- **Destructive commands:** Cannot run `rm` commands
 
 ### What's Allowed
 
-- **Reading files:** Can read any file (Python, JSON, HTML, etc.)
+- **Reading files:** Can read any file (Python, JSON, HTML, sections.md, etc.)
 - **JSON operations:** Can create, read, and edit JSON configs
-- **CLI commands:** Can run all `./scrapai` commands
+- **CLI commands:** Can run `./scrapai` commands, `source`, database clients (`sqlite3`, `psql`), and `xvfb-run`
+- **File operations:** Read, Write, Edit, Update, Glob, Grep on allowed patterns
 - **File search:** Can use `glob` and `grep` to explore the codebase
 - **Git operations:** Can run safe git commands (status, diff, log, commit, push)
 
@@ -192,7 +223,7 @@ Completed:
 ✓ theverge.com → spider created
 ✓ wired.com → spider created
 ✓ arstechnica.com → spider created
-✗ engadget.com → failed (Cloudflare challenge, needs --cloudflare flag)
+✗ engadget.com → failed (Cloudflare challenge, needs --browser flag)
 
 Batch 2 (5 websites):
 [Continues...]
@@ -293,7 +324,7 @@ You: "Run commands one at a time. Read the output before the next command."
 If you're using Claude Code and permission rules aren't enforced:
 
 1. Check that `./scrapai setup` completed successfully
-2. Verify `.claudeignore` exists in the project root
+2. Verify `.claude/settings.local.json` exists with the permission rules
 3. Restart Claude Code
 
 If you're using a different agent, remember that **only Claude Code enforces permissions**. Other agents receive instructions but can ignore them.

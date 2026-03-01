@@ -1,0 +1,969 @@
+---
+title: "Spider Examples"
+description: "Real-world examples of what the agent produces for different site types"
+---
+
+See complete examples of the agent's output for different types of websites. Each example shows the analysis notes, test config, and production config.
+
+<Tabs>
+<Tab title="News Site">
+
+## BBC News (bbc.co.uk)
+
+**Site Type:** Major news organization with 10M+ articles across multiple sections
+
+<Tabs>
+<Tab title="Analysis Notes">
+
+The agent's Phase 1 analysis document (`sections.md`):
+
+```markdown
+# BBC.co.uk - Comprehensive Site Structure Analysis
+
+**Source URL:** https://bbc.co.uk/
+**Project:** news
+**Date:** 2026-02-26
+
+---
+
+## Executive Summary
+
+BBC (British Broadcasting Corporation) is one of the world's largest news organizations
+with extensive content across news, sport, entertainment, education, and lifestyle categories.
+The site contains **6 primary content sections** with hundreds of subsections and categories.
+
+**Key Findings:**
+- No Cloudflare protection (regular HTTP works fine)
+- Semantic HTML with `<article>` tags, `<h1>` titles, `<time>` dates
+- Consistent structure across all content types
+- New URL format: `/section/articles/<id>` (hashed IDs)
+- Legacy URL format: `/section/<number>` (numeric IDs)
+- Regional editions: England, Scotland, Wales, Northern Ireland
+- Massive content volume (millions of articles)
+
+---
+
+## Content Sections (Detailed Analysis)
+
+### 1. News Articles
+**URL Pattern:** `/news/articles/<id>` (primary) + `/news/<number>` (legacy)
+**Homepage:** `/news`
+**Category Structure:** `/news/<category>`
+
+**Article Examples (New Format):**
+- https://www.bbc.co.uk/news/articles/cgjz1x5e1xyo
+- https://www.bbc.co.uk/news/articles/c1mjx1grj3yo
+- https://www.bbc.co.uk/news/articles/c2k8zyq0qgzo
+
+**News Categories/Subsections:**
+- `/news/business` - Business and finance news
+- `/news/politics` - UK and international politics
+- `/news/technology` - Technology and digital news
+- `/news/health` - Health and medical news
+
+**HTML Structure Confirmed:**
+- `<h1 class="ssrcss-zwdxc1-Heading">` for title
+- `<article class="ssrcss-hmqe3h-ArticleWrapper">` container
+- `<time>` tag with readable dates
+- `<div class="ssrcss-nqezkk-RichTextContainer">` for content
+- Clean semantic HTML structure
+
+**Volume:** Millions of articles
+
+---
+
+### 2. Sport Content
+**URL Pattern:** `/sport/<sport>/articles/<id>`
+**Homepage:** `/sport`
+
+**Sport Categories:**
+- `/sport/football` - Football/soccer (largest category)
+- `/sport/cricket` - Cricket
+- `/sport/rugby-union` - Rugby union
+- `/sport/formula1` - Formula 1 racing
+
+**Volume:** Hundreds of thousands of articles
+
+---
+
+### 3. Food Articles
+**URL Pattern:** `/food/articles/<id>`
+**Volume:** Thousands of articles
+
+### 4. Bitesize (Educational Content)
+**URL Pattern:** `/bitesize/articles/<id>`
+**Volume:** Tens of thousands of educational articles
+
+### 5. Newsround (Children's News)
+**URL Pattern:** `/newsround/articles/<id>`
+**Volume:** Thousands of children's news articles
+
+### 6. Media Centre
+**URL Pattern:** `/mediacentre/articles/<year>/<slug>`
+**Volume:** Thousands of press releases
+
+---
+
+## Technical Requirements
+
+**HTTP Access:**
+- Status: No protection (HTTP works fine)
+- Bypass Method: Not needed
+- Settings Required: None (default Scrapy settings work)
+
+**Extractor Strategy:**
+Generic extractors (newspaper/trafilatura) recommended - site uses clean semantic HTML
+
+**Crawl Strategy:**
+1. Start URL: https://www.bbc.co.uk/
+2. Follow links: Yes
+3. Respect robots.txt: Yes
+4. Concurrent requests: 16
+5. Politeness: DOWNLOAD_DELAY = 1 second
+
+---
+
+**Analysis completed:** 2026-02-26
+**Status:** ✅ Ready for Phase 2
+```
+
+<Note>
+Full analysis includes URL matching rules, exclusion patterns, and volume estimates. This is an abbreviated version showing key findings.
+</Note>
+
+</Tab>
+
+<Tab title="Test Config">
+
+```json test_spider.json
+{
+  "name": "bbc_co_uk",
+  "source_url": "https://bbc.co.uk/",
+  "allowed_domains": ["bbc.co.uk", "www.bbc.co.uk"],
+  "start_urls": [
+    "https://www.bbc.co.uk/news/articles/cgjz1x5e1xyo",
+    "https://www.bbc.co.uk/sport/cricket/articles/ce3gyx49z52o",
+    "https://www.bbc.co.uk/food/articles/c0q45xx5g03o",
+    "https://www.bbc.co.uk/bitesize/articles/z74wrmn",
+    "https://www.bbc.co.uk/newsround/articles/c5ykx6xng0qo"
+  ],
+  "rules": [
+    {
+      "allow": [".*"],
+      "callback": "parse_article",
+      "follow": false
+    }
+  ],
+  "settings": {
+    "EXTRACTOR_ORDER": ["newspaper", "trafilatura"],
+    "DOWNLOAD_DELAY": 1,
+    "CONCURRENT_REQUESTS": 16,
+    "ROBOTSTXT_OBEY": true
+  }
+}
+```
+
+<Tip>
+**Test config** uses 5 specific URLs (one from each content section) and a catch-all rule. This validates extraction works before deploying production.
+</Tip>
+
+</Tab>
+
+<Tab title="Production Config">
+
+```json final_spider.json
+{
+  "name": "bbc_co_uk",
+  "source_url": "https://bbc.co.uk/",
+  "allowed_domains": ["bbc.co.uk", "www.bbc.co.uk"],
+  "start_urls": ["https://www.bbc.co.uk/"],
+  "rules": [
+    {
+      "allow": ["/news/articles/.*"],
+      "deny": ["/news/articles/.*#comments"],
+      "callback": "parse_article"
+    },
+    {
+      "allow": ["/sport/.*/articles/.*"],
+      "deny": ["/sport/.*/articles/.*#comments"],
+      "callback": "parse_article"
+    },
+    {
+      "allow": ["/food/articles/.*"],
+      "callback": "parse_article"
+    },
+    {
+      "allow": ["/bitesize/articles/.*"],
+      "deny": ["/bitesize/articles/.*#z.*"],
+      "callback": "parse_article"
+    },
+    {
+      "allow": ["/newsround/articles/.*"],
+      "deny": ["/newsround/articles/.*#comments"],
+      "callback": "parse_article"
+    },
+    {
+      "allow": ["/mediacentre/articles/.*"],
+      "callback": "parse_article"
+    }
+  ],
+  "settings": {
+    "EXTRACTOR_ORDER": ["newspaper", "trafilatura"],
+    "DOWNLOAD_DELAY": 1,
+    "CONCURRENT_REQUESTS": 16,
+    "ROBOTSTXT_OBEY": true
+  }
+}
+```
+
+**Key Differences from Test Config:**
+- Starts from homepage instead of specific URLs
+- 6 specific rules for different content sections
+- Deny patterns to exclude comment sections
+- Ready for production crawling
+
+</Tab>
+</Tabs>
+
+</Tab>
+
+<Tab title="Cloudflare Site">
+
+## TheFGA.org (Policy Think Tank)
+
+**Site Type:** Government policy research organization with Cloudflare protection
+
+<Tabs>
+<Tab title="Analysis Notes">
+
+```markdown
+# TheFGA.org - Comprehensive Site Structure Analysis
+
+**Source URL:** https://thefga.org/
+**Project:** news
+**Date:** 2026-02-26
+
+---
+
+## Executive Summary
+
+The Foundation for Government Accountability (TheFGA) website contains **10 distinct content sections**
+organized by content type. All sections use consistent URL patterns (`/section-name/<slug>/`) and
+appear to use semantic HTML structure suitable for generic extraction.
+
+**Key Findings:**
+- Cloudflare protection active (HTTP 403 without bypass)
+- Semantic HTML with `<article>` tags, `<h1>` titles, `<time>` dates
+- Consistent structure across all content types
+- Pagination on listing pages (`?paged=N`)
+- All content follows article format (title, content, date, author)
+
+---
+
+## Content Sections
+
+### 1. Blog Posts
+**URL Pattern:** `/blog/<slug>/`
+**Listing Page:** `/blog/`
+**Pagination:** `/blog/?paged=2`, `/blog/?paged=3`
+
+**Example URLs:**
+- https://thefga.org/blog/100-days-in-governor-braun-is-making-indiana-great-again/
+- https://thefga.org/blog/minnesota-fraud-scandal-proves-trump-republicans-were-right-on-welfare-reform/
+
+**Volume:** Dozens to hundreds of articles
+
+---
+
+### 2. Op-Eds
+**URL Pattern:** `/op-eds/<slug>/`
+
+### 3. Research Papers
+**URL Pattern:** `/research/<slug>/`
+
+### 4. Press Releases
+**URL Pattern:** `/press/<slug>/`
+
+### 5. In the News
+**URL Pattern:** `/in-the-news/<slug>/`
+
+### 6. Papers
+**URL Pattern:** `/papers/<slug>/`
+
+### 7. One-Pagers
+**URL Pattern:** `/one-pagers/<slug>/`
+
+### 8. Polling
+**URL Pattern:** `/polling/<slug>/`
+
+### 9. Videos
+**URL Pattern:** `/videos/<slug>/`
+
+### 10. Additional Research
+**URL Pattern:** `/additional-research/<slug>/`
+
+---
+
+## Technical Requirements
+
+**HTTP Access:**
+- Status: Cloudflare protection active
+- Bypass Method: Hybrid mode (browser verification → cookie caching → fast HTTP)
+- Settings: CLOUDFLARE_ENABLED=true, CLOUDFLARE_STRATEGY="hybrid"
+
+**Extractor Strategy:**
+Generic extractors (newspaper/trafilatura) work with semantic HTML
+
+**Cloudflare Strategy:**
+- Browser verifies once every 10 minutes
+- Cookies cached for fast HTTP requests
+- 20-100x faster than browser-only mode
+
+---
+
+**Analysis completed:** 2026-02-26
+**Status:** ✅ Ready for Phase 2
+```
+
+</Tab>
+
+<Tab title="Test Config">
+
+```json test_spider.json
+{
+  "name": "thefga_org",
+  "source_url": "https://thefga.org/",
+  "allowed_domains": ["thefga.org"],
+  "start_urls": [
+    "https://thefga.org/blog/100-days-in-governor-braun-is-making-indiana-great-again/",
+    "https://thefga.org/blog/minnesota-fraud-scandal-proves-trump-republicans-were-right-on-welfare-reform/",
+    "https://thefga.org/op-eds/trump-is-right-wall-street-should-not-buy-single-family-homes/",
+    "https://thefga.org/research/make-america-healthy-again-most-states-commit-banning-taxpayer-funded-junk-food/",
+    "https://thefga.org/research/congress-should-stop-runaway-spending-enacting-discretionary-spending-caps-reconciliation/"
+  ],
+  "rules": [
+    {
+      "allow": [".*"],
+      "callback": "parse_article",
+      "follow": false
+    }
+  ],
+  "settings": {
+    "EXTRACTOR_ORDER": ["newspaper", "trafilatura"],
+    "CLOUDFLARE_ENABLED": true,
+    "CLOUDFLARE_STRATEGY": "hybrid",
+    "CLOUDFLARE_COOKIE_REFRESH_THRESHOLD": 600,
+    "CF_MAX_RETRIES": 5,
+    "CF_RETRY_INTERVAL": 1,
+    "CF_POST_DELAY": 5
+  }
+}
+```
+
+<Note>
+**Cloudflare settings** enable hybrid mode: browser verifies once, then uses cached cookies for fast HTTP requests (20-100x faster than browser-only).
+</Note>
+
+</Tab>
+
+<Tab title="Production Config">
+
+```json final_spider.json
+{
+  "name": "thefga_org",
+  "source_url": "https://thefga.org/",
+  "allowed_domains": ["thefga.org"],
+  "start_urls": ["https://thefga.org/"],
+  "rules": [
+    {
+      "allow": ["/blog/.*"],
+      "deny": ["/blog/$", "/blog/\\?paged="],
+      "callback": "parse_article"
+    },
+    {
+      "allow": ["/op-eds/.*"],
+      "deny": ["/op-eds/$"],
+      "callback": "parse_article"
+    },
+    {
+      "allow": ["/research/.*"],
+      "deny": ["/research/$"],
+      "callback": "parse_article"
+    },
+    {
+      "allow": ["/press/.*"],
+      "deny": ["/press/$"],
+      "callback": "parse_article"
+    },
+    {
+      "allow": ["/in-the-news/.*"],
+      "deny": ["/in-the-news/$"],
+      "callback": "parse_article"
+    },
+    {
+      "allow": ["/papers/.*"],
+      "deny": ["/papers/$"],
+      "callback": "parse_article"
+    },
+    {
+      "allow": ["/one-pagers/.*"],
+      "deny": ["/one-pagers/$"],
+      "callback": "parse_article"
+    },
+    {
+      "allow": ["/polling/.*"],
+      "deny": ["/polling/$"],
+      "callback": "parse_article"
+    },
+    {
+      "allow": ["/videos/.*"],
+      "deny": ["/videos/$"],
+      "callback": "parse_article"
+    },
+    {
+      "allow": ["/additional-research/.*"],
+      "deny": ["/additional-research/$"],
+      "callback": "parse_article"
+    }
+  ],
+  "settings": {
+    "EXTRACTOR_ORDER": ["newspaper", "trafilatura"],
+    "CLOUDFLARE_ENABLED": true,
+    "CLOUDFLARE_STRATEGY": "hybrid",
+    "CLOUDFLARE_COOKIE_REFRESH_THRESHOLD": 600,
+    "CF_MAX_RETRIES": 5,
+    "CF_RETRY_INTERVAL": 1,
+    "CF_POST_DELAY": 5
+  }
+}
+```
+
+**Key Features:**
+- 10 rules for 10 content sections
+- Deny patterns exclude listing pages and pagination
+- Cloudflare hybrid mode for speed
+- Cookie refresh every 10 minutes
+
+</Tab>
+</Tabs>
+
+</Tab>
+
+<Tab title="E-commerce">
+
+## Amazon Product Pages
+
+**Site Type:** E-commerce product listings (Mac accessories)
+
+<Tabs>
+<Tab title="Analysis Notes">
+
+```markdown
+# Amazon UK - Mac Accessories Product Pages
+
+**Source URL:** https://www.amazon.co.uk/s?k=mac+accessories
+**Project:** ecommerce
+**Date:** 2026-02-26
+
+---
+
+## Executive Summary
+
+Amazon UK product pages for Mac accessories use consistent HTML structure with
+specific CSS selectors for product information. Custom callbacks required for
+field-level extraction.
+
+**Key Findings:**
+- Product pages use `/dp/<ASIN>` URL pattern
+- ASIN is Amazon Standard Identification Number (10 characters, alphanumeric)
+- No generic extractors (e-commerce sites don't follow article structure)
+- Custom selectors needed for: product name, price, availability, delivery, ASIN
+- Requires realistic USER_AGENT and politeness settings
+
+---
+
+## URL Pattern
+
+**Product Pages:**
+- Pattern: `/dp/[A-Z0-9]{10}`
+- Example: https://www.amazon.co.uk/dp/B077T4FBSP
+- ASIN: B077T4FBSP (unique product identifier)
+
+**Search Results:**
+- Pattern: `/s?k=<query>&page=<N>`
+- Used to discover product URLs
+
+**Exclusions:**
+- `/gp/` - General pages (cart, checkout, account)
+- `/customer-reviews/` - Review pages
+- `/ask/questions/` - Q&A pages
+- `/offer-listing/` - Multi-offer pages
+
+---
+
+## Field Extraction
+
+**Product Name:**
+- Selector: `span#productTitle::text`
+- Processor: strip whitespace
+
+**Price:**
+- Selector: `span.a-price span.a-offscreen::text`
+- Format: "£XX.XX"
+
+**Availability:**
+- Selector: `div#availability span::text`
+- Examples: "In Stock", "Only 2 left in stock"
+
+**Delivery Information:**
+- Multiple selectors for primary/fastest/full delivery messages
+- Join multiple spans into single text
+
+**ASIN:**
+- Selector: `input#ASIN::attr(value)`
+- 10-character product identifier
+
+---
+
+## Technical Requirements
+
+**Politeness:**
+- DOWNLOAD_DELAY: 2 seconds
+- CONCURRENT_REQUESTS: 4 (lower than default)
+- Realistic USER_AGENT required
+- ROBOTSTXT_OBEY: true
+
+**Extraction Strategy:**
+- EXTRACTOR_ORDER: [] (no generic extractors)
+- Custom callbacks with field-level selectors
+
+---
+
+**Analysis completed:** 2026-02-26
+**Status:** ✅ Ready for Phase 2
+```
+
+</Tab>
+
+<Tab title="Test Config">
+
+```json test_spider.json
+{
+  "name": "amazon_mac_accessories",
+  "source_url": "https://www.amazon.co.uk/s?k=mac+accessories",
+  "allowed_domains": ["amazon.co.uk", "www.amazon.co.uk"],
+  "start_urls": [
+    "https://www.amazon.co.uk/dp/B077T4FBSP",
+    "https://www.amazon.co.uk/dp/B0BQLLB61B",
+    "https://www.amazon.co.uk/dp/B0DKT8BB4M",
+    "https://www.amazon.co.uk/dp/B096KHQWMF",
+    "https://www.amazon.co.uk/dp/B07X1VZRT1"
+  ],
+  "rules": [
+    {
+      "allow": [".*"],
+      "callback": "parse_product",
+      "follow": false
+    }
+  ],
+  "callbacks": {
+    "parse_product": {
+      "extract": {
+        "product_name": {
+          "css": "span#productTitle::text",
+          "processors": [{"type": "strip"}]
+        },
+        "delivery_primary": {
+          "css": "div#mir-layout-DELIVERY_BLOCK-slot-PRIMARY_DELIVERY_MESSAGE_LARGE span::text",
+          "get_all": true,
+          "processors": [{"type": "join", "separator": " "}]
+        },
+        "delivery_fastest": {
+          "css": "div#mir-layout-DELIVERY_BLOCK-slot-SECONDARY_DELIVERY_MESSAGE_LARGE span::text",
+          "get_all": true,
+          "processors": [{"type": "join", "separator": " "}]
+        },
+        "price": {
+          "css": "span.a-price span.a-offscreen::text"
+        },
+        "availability": {
+          "css": "div#availability span::text",
+          "processors": [{"type": "strip"}]
+        },
+        "asin": {
+          "css": "input#ASIN::attr(value)"
+        }
+      }
+    }
+  },
+  "settings": {
+    "EXTRACTOR_ORDER": [],
+    "DOWNLOAD_DELAY": 2,
+    "CONCURRENT_REQUESTS": 4,
+    "ROBOTSTXT_OBEY": true,
+    "USER_AGENT": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+  }
+}
+```
+
+<Tip>
+**Custom callbacks** define field-level extraction. No generic extractors for e-commerce sites.
+</Tip>
+
+</Tab>
+
+<Tab title="Production Config">
+
+```json final_spider.json
+{
+  "name": "amazon_mac_accessories",
+  "source_url": "https://www.amazon.co.uk/s?k=mac+accessories",
+  "allowed_domains": ["amazon.co.uk", "www.amazon.co.uk"],
+  "start_urls": [
+    "https://www.amazon.co.uk/s?k=mac+accessories&page=1",
+    "https://www.amazon.co.uk/s?k=mac+accessories&page=2"
+  ],
+  "rules": [
+    {
+      "allow": ["/dp/[A-Z0-9]{10}"],
+      "deny": [
+        "/gp/",
+        "/ap/",
+        "/customer-reviews/",
+        "/product-reviews/",
+        "/ask/questions/",
+        "/review/",
+        "/offer-listing/",
+        "/twister/"
+      ],
+      "callback": "parse_product",
+      "follow": false
+    }
+  ],
+  "callbacks": {
+    "parse_product": {
+      "extract": {
+        "product_name": {
+          "css": "span#productTitle::text",
+          "processors": [{"type": "strip"}]
+        },
+        "delivery_primary": {
+          "css": "div#mir-layout-DELIVERY_BLOCK-slot-PRIMARY_DELIVERY_MESSAGE_LARGE span::text",
+          "get_all": true,
+          "processors": [{"type": "join", "separator": " "}]
+        },
+        "delivery_fastest": {
+          "css": "div#mir-layout-DELIVERY_BLOCK-slot-SECONDARY_DELIVERY_MESSAGE_LARGE span::text",
+          "get_all": true,
+          "processors": [{"type": "join", "separator": " "}]
+        },
+        "price": {
+          "css": "span.a-price span.a-offscreen::text"
+        },
+        "availability": {
+          "css": "div#availability span::text",
+          "processors": [{"type": "strip"}]
+        },
+        "asin": {
+          "css": "input#ASIN::attr(value)"
+        }
+      }
+    }
+  },
+  "settings": {
+    "EXTRACTOR_ORDER": [],
+    "DOWNLOAD_DELAY": 2,
+    "CONCURRENT_REQUESTS": 4,
+    "ROBOTSTXT_OBEY": true,
+    "USER_AGENT": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+  }
+}
+```
+
+**Key Features:**
+- Regex pattern `/dp/[A-Z0-9]{10}` matches ASIN format
+- Extensive deny patterns for non-product pages
+- Lower concurrency (4) and higher delay (2s) for politeness
+- Realistic USER_AGENT required
+
+</Tab>
+</Tabs>
+
+</Tab>
+
+<Tab title="Forum">
+
+## Hacker News Discussions
+
+**Site Type:** Forum/discussion board with nested comment threads
+
+<Tabs>
+<Tab title="Analysis Notes">
+
+```markdown
+# Hacker News - Discussion Threads
+
+**Source URL:** https://news.ycombinator.com/
+**Project:** forums
+**Date:** 2026-02-26
+
+---
+
+## Executive Summary
+
+Hacker News is a social news website with user-submitted stories and threaded
+comment discussions. Nested comment structure requires custom callbacks with
+nested list extraction.
+
+**Key Findings:**
+- Discussion pages use `/item?id=<number>` URL pattern
+- Nested comment threads with indent levels
+- Custom selectors for story metadata and comments
+- XPath needed for complex relationships (story author)
+- Minimalist HTML with class-based selectors
+
+---
+
+## URL Pattern
+
+**Discussion Pages:**
+- Pattern: `/item?id=\d+`
+- Example: https://news.ycombinator.com/item?id=47173121
+
+**Homepage:**
+- Pattern: `/` or `/?p=<N>` for pagination
+- Lists top stories with links to discussion pages
+
+**Exclusions:**
+- `/vote` - Voting actions
+- `/reply` - Reply forms
+- `/user` - User profiles
+- `/from` - Domain pages
+
+---
+
+## Data Structure
+
+**Story Fields:**
+- Title: `tr.athing td.title a::text`
+- URL: `tr.athing td.title a::attr(href)`
+- Points: `span.score::text` (requires regex extraction)
+- Author: XPath following-sibling selector
+
+**Comment Fields (Nested):**
+- Comment ID: `::attr(id)`
+- Author: `a.hnuser::text`
+- Timestamp: `span.age::attr(title)`
+- Indent level: `td.ind::attr(indent)` (for threading)
+- Comment text: `div.commtext`
+- Parent link: `a.clicky::attr(href)`
+- Reply count: `a.togg::attr(n)`
+
+---
+
+## Technical Requirements
+
+**Politeness:**
+- DOWNLOAD_DELAY: 2 seconds
+- CONCURRENT_REQUESTS: 2 (very low, respect HN servers)
+- DEPTH_LIMIT: 2 (prevent infinite crawling)
+- ROBOTSTXT_OBEY: true
+
+**Extraction Strategy:**
+- EXTRACTOR_ORDER: [] (no generic extractors)
+- Custom callbacks with nested list for comments
+- XPath for complex DOM relationships
+
+---
+
+**Analysis completed:** 2026-02-26
+**Status:** ✅ Ready for Phase 2
+```
+
+</Tab>
+
+<Tab title="Test Config">
+
+```json test_spider.json
+{
+  "name": "hn_discussions",
+  "source_url": "https://news.ycombinator.com/",
+  "allowed_domains": ["news.ycombinator.com"],
+  "start_urls": [
+    "https://news.ycombinator.com/item?id=47173121"
+  ],
+  "rules": [
+    {
+      "allow": ["/item\\?id=\\d+"],
+      "callback": "parse_discussion",
+      "follow": false
+    }
+  ],
+  "callbacks": {
+    "parse_discussion": {
+      "extract": {
+        "story_title": {
+          "css": "tr.athing td.title a::text"
+        },
+        "story_url": {
+          "css": "tr.athing td.title a::attr(href)"
+        },
+        "story_points": {
+          "css": "span.score::text",
+          "processors": [
+            {"type": "regex", "pattern": "(\\d+)"},
+            {"type": "default", "value": "0"},
+            {"type": "cast", "to": "int"}
+          ]
+        },
+        "comments": {
+          "type": "nested_list",
+          "selector": "tr.athing.comtr",
+          "extract": {
+            "comment_id": {"css": "::attr(id)"},
+            "author": {"css": "a.hnuser::text"},
+            "time_text": {"css": "span.age a::text"},
+            "timestamp": {"css": "span.age::attr(title)"},
+            "indent_level": {
+              "css": "td.ind::attr(indent)",
+              "processors": [
+                {"type": "default", "value": "0"},
+                {"type": "cast", "to": "int"}
+              ]
+            },
+            "comment_text": {
+              "css": "div.commtext",
+              "get_all": true,
+              "processors": [{"type": "join", "separator": " "}]
+            },
+            "parent_link": {"css": "a.clicky::attr(href)"},
+            "reply_count": {
+              "css": "a.togg::attr(n)",
+              "processors": [
+                {"type": "default", "value": "0"},
+                {"type": "cast", "to": "int"}
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "settings": {
+    "EXTRACTOR_ORDER": [],
+    "DOWNLOAD_DELAY": 2,
+    "CONCURRENT_REQUESTS": 2,
+    "ROBOTSTXT_OBEY": true,
+    "DEPTH_LIMIT": 1
+  }
+}
+```
+
+<Note>
+**Nested lists** extract hierarchical comment threads. Each comment includes indent level for threading structure.
+</Note>
+
+</Tab>
+
+<Tab title="Production Config">
+
+```json final_spider.json
+{
+  "name": "hn_discussions",
+  "source_url": "https://news.ycombinator.com/",
+  "allowed_domains": ["news.ycombinator.com"],
+  "start_urls": [
+    "https://news.ycombinator.com/",
+    "https://news.ycombinator.com/?p=2"
+  ],
+  "rules": [
+    {
+      "allow": ["/item\\?id=\\d+"],
+      "deny": ["/vote", "/reply", "/user", "/from"],
+      "callback": "parse_discussion",
+      "follow": false
+    }
+  ],
+  "callbacks": {
+    "parse_discussion": {
+      "extract": {
+        "story_title": {"css": "tr.athing td.title a::text"},
+        "story_url": {"css": "tr.athing td.title a::attr(href)"},
+        "story_source": {"css": "span.sitestr::text"},
+        "story_points": {
+          "css": "span.score::text",
+          "processors": [{"type": "regex", "pattern": "(\\d+)"}]
+        },
+        "story_author": {
+          "xpath": "//tr[@class='athing']/following-sibling::tr[1]//a[@class='hnuser']/text()"
+        },
+        "comments": {
+          "type": "nested_list",
+          "selector": "tr.athing.comtr",
+          "extract": {
+            "comment_id": {"css": "::attr(id)"},
+            "author": {"css": "a.hnuser::text"},
+            "time_text": {"css": "span.age a::text"},
+            "timestamp": {"css": "span.age::attr(title)"},
+            "indent_level": {"css": "td.ind::attr(indent)"},
+            "comment_text": {
+              "css": "div.commtext",
+              "get_all": true,
+              "processors": [{"type": "join", "separator": " "}]
+            },
+            "parent_link": {"css": "a.clicky::attr(href)"},
+            "reply_count": {"css": "a.togg::attr(n)"}
+          }
+        }
+      }
+    }
+  },
+  "settings": {
+    "EXTRACTOR_ORDER": [],
+    "DOWNLOAD_DELAY": 2,
+    "CONCURRENT_REQUESTS": 2,
+    "ROBOTSTXT_OBEY": true,
+    "DEPTH_LIMIT": 2
+  }
+}
+```
+
+**Key Features:**
+- XPath for story author (complex DOM relationship)
+- Nested list captures comment hierarchy
+- Indent level preserved for threading
+- Very polite settings (CONCURRENT_REQUESTS=2, DOWNLOAD_DELAY=2)
+- Deny patterns for actions/profiles
+
+</Tab>
+</Tabs>
+
+</Tab>
+</Tabs>
+
+## What This Shows
+
+Across all examples, notice how the agent:
+
+1. **Analyzes thoroughly** - Documents URL patterns, content sections, HTML structure
+2. **Tests first** - Creates test config with sample URLs before production
+3. **Adapts strategy** - Uses generic extractors for articles, custom callbacks for products/forums
+4. **Handles edge cases** - Deny patterns, pagination, comment sections, utility pages
+5. **Respects sites** - Appropriate DOWNLOAD_DELAY, CONCURRENT_REQUESTS, ROBOTSTXT_OBEY
+
+## Related Documentation
+
+<CardGroup cols={2}>
+<Card title="Agent Workflow" icon="diagram-project" href="/agents/workflow">
+Complete 4-phase process
+</Card>
+<Card title="Spider Schema" icon="file-code" href="/api/spider-schema">
+JSON configuration reference
+</Card>
+<Card title="Custom Callbacks" icon="code" href="/guides/custom-callbacks">
+Field-level extraction
+</Card>
+<Card title="Cloudflare Bypass" icon="shield" href="/guides/cloudflare-bypass">
+Hybrid mode details
+</Card>
+</CardGroup>

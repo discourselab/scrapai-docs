@@ -3,7 +3,7 @@ title: Cloudflare Bypass
 description: Handle Cloudflare-protected sites with browser verification and cookie caching
 ---
 
-Only enable Cloudflare bypass when the site explicitly requires it. Always test WITHOUT `--cloudflare` first.
+Only enable Cloudflare bypass when the site explicitly requires it. Always test WITHOUT `--browser` first.
 
 ## Detection Indicators
 
@@ -13,6 +13,19 @@ Your site needs Cloudflare bypass if you see:
 - "Checking your browser" or "Just a moment" messages
 - 403/503 HTTP errors with Cloudflare branding
 - Challenge pages before content loads
+</Warning>
+
+<Warning>
+**VPS/Cloud Server IP Reputation Issue:**
+
+If running on AWS, DigitalOcean, Hetzner, or any cloud provider, Cloudflare may block your server's IP even with browser bypass enabled. Cloud/datacenter IPs are often flagged as high-risk.
+
+**Solution:** Combine `--browser` with residential proxies:
+```bash
+./scrapai crawl spider --project proj --proxy-type residential --browser
+```
+
+See [Proxy Configuration](/configuration/proxies#running-on-vpscloud-servers) for details.
 </Warning>
 
 ## Display Requirements
@@ -61,13 +74,13 @@ For JavaScript-heavy sites:
 <Step title="Use Cloudflare bypass only when blocked">
 For Cloudflare-protected sites:
 ```bash
-./scrapai inspect https://example.com --project proj --cloudflare
+./scrapai inspect https://example.com --project proj --browser
 ```
 </Step>
 </Steps>
 
 <Tip>
-**Smart resource usage:** Start with default HTTP (fast). Escalate to `--browser` if content is JS-rendered. Use `--cloudflare` only when seeing challenge pages or 403/503 errors.
+**Smart resource usage:** Start with default HTTP (fast). Escalate to `--browser` if content is JS-rendered. Use `--browser` only when seeing challenge pages or 403/503 errors.
 </Tip>
 
 ## Strategies
@@ -218,9 +231,9 @@ Verify Xvfb is installed: `sudo apt-get install xvfb`
 </Step>
 
 <Step title="Test with inspector">
-Test with `--cloudflare` flag on inspector first:
+Test with `--browser` flag on inspector first:
 ```bash
-./scrapai inspect https://example.com --project proj --cloudflare
+./scrapai inspect https://example.com --project proj --browser
 ```
 </Step>
 
@@ -243,7 +256,7 @@ Verify CPU, memory, and disk space availability
 <Steps>
 <Step title="Test inspector on both machines">
 ```bash
-./scrapai inspect https://example.com --project proj --cloudflare
+./scrapai inspect https://example.com --project proj --browser
 ```
 </Step>
 

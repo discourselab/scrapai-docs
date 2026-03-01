@@ -125,8 +125,8 @@ If the URL points to an XML sitemap (e.g., `https://site.com/sitemap.xml`):
     # Use --browser if site needs JavaScript
     ./scrapai inspect https://website.com/article-url --project proj --browser
     
-    # Use --cloudflare if site is protected
-    ./scrapai inspect https://website.com/article-url --project proj --cloudflare
+    # Use --browser if site is protected
+    ./scrapai inspect https://website.com/article-url --project proj --browser
     
     ./scrapai analyze data/proj/spider/analysis/page.html
     ```
@@ -460,7 +460,7 @@ Use when content is loaded by JavaScript after page load.
 ### Cloudflare Bypass
 
 <Warning>
-  Test WITHOUT `--cloudflare` first. Only enable if inspector fails with 403/503 or "Checking your browser".
+  Test WITHOUT `--browser` first. Only enable if inspector fails with 403/503 or "Checking your browser".
 </Warning>
 
 **Hybrid mode (default, 20-100x faster):**

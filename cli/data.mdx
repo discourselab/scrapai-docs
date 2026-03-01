@@ -27,7 +27,7 @@ View scraped items from the database.
   Project name.
 </ParamField>
 
-<ParamField path="--limit" type="integer" default="5">
+<ParamField path="--limit, -l" type="integer" default="5">
   Number of items to display.
 </ParamField>
 
@@ -39,7 +39,7 @@ View scraped items from the database.
   Search in titles only (case-insensitive).
 </ParamField>
 
-<ParamField path="--text" type="string">
+<ParamField path="--text, -t" type="string">
   Search in both title and content (case-insensitive).
 </ParamField>
 
@@ -187,15 +187,15 @@ Export scraped items to file formats.
   Project name.
 </ParamField>
 
-<ParamField path="--format" type="choice" required>
+<ParamField path="--format, -f" type="choice" required>
   Export format: `csv`, `json`, `jsonl`, `parquet`.
 </ParamField>
 
-<ParamField path="--output" type="string">
+<ParamField path="--output, -o" type="string">
   Custom output file path. If not specified, uses timestamped filename in `data/<project>/<spider>/exports/`.
 </ParamField>
 
-<ParamField path="--limit" type="integer">
+<ParamField path="--limit, -l" type="integer">
   Limit number of items to export.
 </ParamField>
 
@@ -207,7 +207,7 @@ Export scraped items to file formats.
   Filter by title.
 </ParamField>
 
-<ParamField path="--text" type="string">
+<ParamField path="--text, -t" type="string">
   Filter by title or content.
 </ParamField>
 

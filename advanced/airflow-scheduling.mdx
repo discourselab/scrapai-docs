@@ -59,12 +59,9 @@ _AIRFLOW_WWW_USER_PASSWORD=your_secure_password
 # Set Airflow UID to match your user
 AIRFLOW_UID=$(id -u)
 
-# Database connection (must match your ScrapAI database)
-DB_HOST=host.docker.internal
-DB_PORT=5432
-DB_NAME=scrapai
-DB_USER=postgres
-DB_PASSWORD=your_password
+# ScrapAI Database connection (PostgreSQL required)
+# Note: Must use connection string format, not individual variables
+DATABASE_URL=postgresql://user:password@host.docker.internal:5432/scrapai
 ```
 
 ### 2. Start Airflow
@@ -108,15 +105,19 @@ dag = DAG(
 )
 ```
 
+<Note>
+Code examples in this guide are simplified for clarity. The actual bash commands in the DAG include path changes (`cd {SCRAPAI_PATH}`) and virtual environment activation (`source .venv/bin/activate`).
+</Note>
+
 ### Task Structure
 
 Each DAG has 2-3 tasks:
 
-1. **crawl_spider**: Runs `./scrapai crawl {spider_name} --timeout 28800`
+1. **crawl_spider**: Runs `./scrapai crawl {spider_name} --project {project} --timeout 28800`
    - 8-hour graceful timeout
    - 9-hour hard kill as fallback
 
-2. **verify_results**: Runs `./scrapai show {spider_name} --limit 5`
+2. **verify_results**: Runs `./scrapai show {spider_name} --project {project} --limit 5`
    - Verifies data was extracted
    - Shows sample of results
 
@@ -257,27 +258,27 @@ The DAG generator automatically enables S3 upload if all credentials are present
 
 ### Upload Behavior
 
-From `airflow/dags/scrapai_spider_dags.py:61-139`:
+From `airflow/dags/scrapai_spider_dags.py:61-140`:
 
 ```python
-def upload_to_s3(spider_name: str, **context):
-    # Find latest crawl file
-    data_dir = SCRAPAI_PATH / 'data' / spider_name
+def upload_to_s3(spider_name: str, project: str, **context):
+    # Find latest crawl file (includes project in path)
+    data_dir = SCRAPAI_PATH / 'data' / project / spider_name
     crawl_files = sorted(glob(str(data_dir / '**' / 'crawl_*.jsonl'), recursive=True), reverse=True)
     latest_file = crawl_files[0]
-    
+
     # Compress to .jsonl.gz
     with open(latest_path, 'rb') as f_in:
         with gzip.open(gz_path, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
-    
-    # Preserve folder structure: spider_name/date/filename.gz
+
+    # Preserve folder structure: project/spider_name/date/filename.gz
     relative_path = gz_path.relative_to(SCRAPAI_PATH / 'data')
     s3_key = str(relative_path)
-    
+
     # Upload
     s3_client.upload_file(str(gz_path), s3_bucket, s3_key)
-    
+
     # Clean up local files after successful upload
     gz_path.unlink()
     latest_path.unlink()
@@ -285,7 +286,7 @@ def upload_to_s3(spider_name: str, **context):
 
 **Compression savings**: Typically 70-90% for JSONL text data.
 
-**S3 path structure**: `s3://bucket/spider_name/YYYY-MM-DD/crawl_HHMMSS.jsonl.gz`
+**S3 path structure**: `s3://bucket/project/spider_name/YYYY-MM-DD/crawl_HHMMSS.jsonl.gz`
 
 ## Access Control (RBAC)
 
@@ -448,11 +449,11 @@ source .venv/bin/activate
 
 ### Database Connection Issues
 
-**Use host.docker.internal instead of localhost:**
+**Use host.docker.internal in DATABASE_URL:**
 
 ```bash
-# In .env
-DB_HOST=host.docker.internal
+# In .env (correct format)
+DATABASE_URL=postgresql://user:password@host.docker.internal:5432/scrapai
 ```
 
 **Test connectivity from container:**

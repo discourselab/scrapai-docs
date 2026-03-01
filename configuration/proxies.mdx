@@ -69,6 +69,47 @@ ScrapAI features **SmartProxyMiddleware** that intelligently manages proxy usage
 - Slower (higher latency)
 - Lower bandwidth
 
+## ⚠️ Running on VPS/Cloud Servers
+
+<Warning>
+**Remote servers (AWS, DigitalOcean, Hetzner, etc.) often have poor IP reputation!**
+
+Anti-bot services like Cloudflare, DataDome, and PerimeterX track datacenter IP ranges and may block requests from:
+- AWS EC2, Lambda
+- DigitalOcean Droplets
+- Google Cloud Compute
+- Azure VMs
+- Hetzner, OVH, Vultr
+- Any VPS/cloud provider
+
+**Symptoms:**
+- Getting blocked even without high request rates
+- 403/429 errors immediately on first request
+- Cloudflare challenges that never resolve
+- "Access Denied" messages
+
+**Solution:** Use **residential proxies** with `--proxy-type residential` flag. Residential IPs have clean reputation and bypass IP-based blocking.
+</Warning>
+
+**Why this happens:**
+- Datacenter IPs are flagged in threat intelligence databases
+- Many bots, scrapers, and malicious traffic originate from cloud providers
+- Anti-bot services preemptively block entire datacenter IP ranges
+- Your server IP may be on blocklists even if YOU never abused it
+
+**When you MUST use residential proxies:**
+- Running ScrapAI on any cloud/VPS server
+- Scraping sites with strong anti-bot protection
+- Getting blocked despite using datacenter proxies
+- Target site explicitly blocks datacenter IPs
+
+<Tip>
+**Local development vs Production:**
+- Local (home ISP): Datacenter proxies usually work fine
+- VPS/Cloud servers: Residential proxies often required
+- Test locally first, then switch to residential when deploying to cloud
+</Tip>
+
 ## Configuration
 
 ### Setup Datacenter Proxy
@@ -79,8 +120,8 @@ Add credentials to `.env`:
 # Datacenter Proxy (default - used automatically)
 DATACENTER_PROXY_USERNAME=your_username
 DATACENTER_PROXY_PASSWORD=your_password
-DATACENTER_PROXY_HOST=dc.decodo.com
-DATACENTER_PROXY_PORT=10000  # Port 10000 = rotating IPs (recommended)
+DATACENTER_PROXY_HOST=proxy.provider.com
+DATACENTER_PROXY_PORT=8080  # Check your provider's documentation
 ```
 
 ### Setup Residential Proxy
@@ -91,8 +132,8 @@ Add credentials to `.env`:
 # Residential Proxy (used with --proxy-type residential flag)
 RESIDENTIAL_PROXY_USERNAME=your_username
 RESIDENTIAL_PROXY_PASSWORD=your_password
-RESIDENTIAL_PROXY_HOST=gate.decodo.com
-RESIDENTIAL_PROXY_PORT=7000  # Port 7000 = rotating residential IPs
+RESIDENTIAL_PROXY_HOST=residential.provider.com
+RESIDENTIAL_PROXY_PORT=8080  # Check your provider's documentation
 ```
 
 ### Environment Variables
@@ -107,15 +148,14 @@ RESIDENTIAL_PROXY_PORT=7000  # Port 7000 = rotating residential IPs
 
 <ParamField path="DATACENTER_PROXY_HOST" type="string" required={false}>
   Datacenter proxy server hostname.
-  
-  **Example:** `dc.decodo.com`
+
+  **Example:** `proxy.provider.com`
 </ParamField>
 
 <ParamField path="DATACENTER_PROXY_PORT" type="number" required={false}>
   Datacenter proxy server port.
-  
-  **Rotating IPs:** Use port `10000` (recommended)
-  **Sticky IPs:** Use ports `10001-63000` (same port = same IP)
+
+  **Example:** `8080` (check your provider's documentation for the correct port)
 </ParamField>
 
 <ParamField path="RESIDENTIAL_PROXY_USERNAME" type="string" required={false}>
@@ -128,49 +168,40 @@ RESIDENTIAL_PROXY_PORT=7000  # Port 7000 = rotating residential IPs
 
 <ParamField path="RESIDENTIAL_PROXY_HOST" type="string" required={false}>
   Residential proxy server hostname.
-  
-  **Example:** `gate.decodo.com`
+
+  **Example:** `residential.provider.com`
 </ParamField>
 
 <ParamField path="RESIDENTIAL_PROXY_PORT" type="number" required={false}>
   Residential proxy server port.
-  
-  **Rotating IPs:** Use port `7000` (recommended)
+
+  **Example:** `8080` (check your provider's documentation for the correct port)
 </ParamField>
 
-## Decodo Configuration (Recommended)
+## Example Configuration
 
 ### Datacenter Proxies
 
 ```bash
-# Get credentials from Decodo dashboard
-DATACENTER_PROXY_USERNAME=your_decodo_username
-DATACENTER_PROXY_PASSWORD=your_decodo_password
-DATACENTER_PROXY_HOST=dc.decodo.com
-DATACENTER_PROXY_PORT=10000  # Rotating datacenter IPs
+# Get credentials from your proxy provider
+DATACENTER_PROXY_USERNAME=your_username
+DATACENTER_PROXY_PASSWORD=your_password
+DATACENTER_PROXY_HOST=proxy.provider.com
+DATACENTER_PROXY_PORT=8080  # Check your provider's documentation
 ```
 
 ### Residential Proxies
 
 ```bash
-# Get credentials from Decodo dashboard
-RESIDENTIAL_PROXY_USERNAME=your_decodo_username
-RESIDENTIAL_PROXY_PASSWORD=your_decodo_password
-RESIDENTIAL_PROXY_HOST=gate.decodo.com
-RESIDENTIAL_PROXY_PORT=7000  # Rotating residential IPs
+# Get credentials from your proxy provider
+RESIDENTIAL_PROXY_USERNAME=your_username
+RESIDENTIAL_PROXY_PASSWORD=your_password
+RESIDENTIAL_PROXY_HOST=residential.provider.com
+RESIDENTIAL_PROXY_PORT=8080  # Check your provider's documentation
 ```
 
-### Decodo Port Options
-
-**Datacenter (dc.decodo.com):**
-- **Port 10000**: Rotating IPs (recommended) - Each request gets a different IP automatically
-- **Ports 10001-63000**: Sticky IPs - Same port = same IP address
-
-**Residential (gate.decodo.com):**
-- **Port 7000**: Rotating residential IPs (recommended)
-
 <Tip>
-ScrapAI's SmartProxyMiddleware uses a single proxy connection, so **use rotating ports (10000 for datacenter, 7000 for residential)**.
+Check your proxy provider's documentation for the correct host, port, and whether they offer rotating vs sticky IPs. ScrapAI's SmartProxyMiddleware works with any standard HTTP proxy.
 </Tip>
 
 ## Usage
@@ -253,20 +284,20 @@ Statistics are logged when spider closes:
 
 ## Proxy Providers
 
-SmartProxyMiddleware works with any HTTP proxy provider:
+SmartProxyMiddleware works with any HTTP proxy provider. **Use whatever proxy service you prefer.** Popular options include:
 
 ### Datacenter Proxies
 
-- [Decodo](https://decodo.com/) ⭐ **(Recommended)** - Residential and datacenter proxies, good value
-- [Bright Data](https://brightdata.com/) - Industry leader
-- [Oxylabs](https://oxylabs.io/) - High quality
-- [IPRoyal](https://iproyal.com/) - Budget friendly
+- [Decodo](https://decodo.com/)
+- [Bright Data](https://brightdata.com/)
+- [Oxylabs](https://oxylabs.io/)
+- [IPRoyal](https://iproyal.com/)
 
 ### Residential Proxies
 
 - Use with `--proxy-type residential` flag on crawl command
 - Same smart strategy (direct first, proxy only when blocked)
-- Decodo offers residential proxies - configure RESIDENTIAL_PROXY_* vars in .env
+- Most providers offer both datacenter and residential proxies - configure RESIDENTIAL_PROXY_* vars in .env
 
 ## Technical Details
 
@@ -342,7 +373,7 @@ curl -x http://$DATACENTER_PROXY_USERNAME:$DATACENTER_PROXY_PASSWORD@$DATACENTER
 
 1. Check proxy server is reachable:
    ```bash
-   ping dc.decodo.com
+   ping $DATACENTER_PROXY_HOST
    ```
 2. Verify firewall allows outbound connections
 3. Try different proxy port

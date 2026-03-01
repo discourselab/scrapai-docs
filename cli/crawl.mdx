@@ -27,15 +27,15 @@ Run a spider by name.
   Project name containing the spider.
 </ParamField>
 
-<ParamField path="--limit" type="integer">
+<ParamField path="--limit, -l" type="integer">
   Limit number of items to scrape. Enables **test mode** when specified.
 </ParamField>
 
-<ParamField path="--output" type="string">
+<ParamField path="--output, -o" type="string">
   Custom output file path. If not specified, uses timestamped filename in `data/<project>/<spider>/crawls/`.
 </ParamField>
 
-<ParamField path="--timeout" type="integer">
+<ParamField path="--timeout, -t" type="integer">
   Maximum runtime in seconds. Triggers graceful shutdown when exceeded.
 </ParamField>
 
@@ -44,6 +44,22 @@ Run a spider by name.
   - `auto`: Smart escalation with expert-in-the-loop (default)
   - `datacenter`: Use datacenter proxy explicitly
   - `residential`: Use residential proxy explicitly
+</ParamField>
+
+<ParamField path="--browser" type="boolean">
+  Use browser automation for JavaScript-rendered sites and Cloudflare bypass. Enables hybrid mode: browser for initial challenge, then fast HTTP requests.
+</ParamField>
+
+<ParamField path="--reset-deltafetch" type="boolean">
+  Clear DeltaFetch cache to re-crawl all URLs. Useful when you need to refresh previously scraped content.
+</ParamField>
+
+<ParamField path="--save-html" type="boolean">
+  Save raw HTML content in output files. Increases file size but useful for debugging or post-processing. Only applies to JSONL exports (production mode).
+</ParamField>
+
+<ParamField path="--scrapy-args" type="string">
+  Additional Scrapy command-line arguments to pass through. Format: `"-s SETTING=value -L DEBUG"`. Advanced users only.
 </ParamField>
 
 ### Test Mode (with --limit)
@@ -258,7 +274,7 @@ Run all active spiders in a project sequentially.
   Project name.
 </ParamField>
 
-<ParamField path="--limit" type="integer">
+<ParamField path="--limit, -l" type="integer">
   Limit items per spider (test mode).
 </ParamField>
 

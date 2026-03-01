@@ -115,8 +115,8 @@ The `.env` file is gitignored by default. Never commit credentials to version co
 
 <ParamField path="DATACENTER_PROXY_HOST" type="string" required={false}>
   Datacenter proxy server hostname.
-  
-  **Example:** `dc.decodo.com`
+
+  **Example:** `dc.yourproxy.com`
 </ParamField>
 
 <ParamField path="DATACENTER_PROXY_PORT" type="number" required={false}>
@@ -135,8 +135,8 @@ The `.env` file is gitignored by default. Never commit credentials to version co
 
 <ParamField path="RESIDENTIAL_PROXY_HOST" type="string" required={false}>
   Residential proxy server hostname.
-  
-  **Example:** `gate.decodo.com`
+
+  **Example:** `residential.yourproxy.com`
 </ParamField>
 
 <ParamField path="RESIDENTIAL_PROXY_PORT" type="number" required={false}>
@@ -208,14 +208,14 @@ DATABASE_URL=sqlite:///scrapai.db
 # Datacenter Proxy (recommended for most use cases - faster, cheaper)
 # DATACENTER_PROXY_USERNAME=your_username
 # DATACENTER_PROXY_PASSWORD=your_password
-# DATACENTER_PROXY_HOST=dc.decodo.com
-# DATACENTER_PROXY_PORT=10000  # Port 10000 = rotating IPs (recommended)
+# DATACENTER_PROXY_HOST=dc.yourproxy.com
+# DATACENTER_PROXY_PORT=10000
 
 # Residential Proxy (used with --proxy-type residential flag)
 # RESIDENTIAL_PROXY_USERNAME=your_username
 # RESIDENTIAL_PROXY_PASSWORD=your_password
-# RESIDENTIAL_PROXY_HOST=gate.decodo.com
-# RESIDENTIAL_PROXY_PORT=7000  # Port 7000 = rotating residential IPs
+# RESIDENTIAL_PROXY_HOST=residential.yourproxy.com
+# RESIDENTIAL_PROXY_PORT=8000
 
 # Logging
 # LOG_LEVEL=info

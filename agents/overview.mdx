@@ -106,7 +106,7 @@ Agent: [Queues them, processes in parallel batches]
 ```
 
 <Note>
-  Claude Code enforces permission rules at the tool level, blocking `Write(**/*.py)`, `Edit(**/*.py)`, and destructive shell commands. This is the only agent with guaranteed enforcement.
+  Claude Code enforces permission rules at the tool level, blocking all Python file modifications (`Write/Edit/Update/MultiEdit(**/*.py)`), sensitive files, web access, and destructive shell commands. This is the only agent with guaranteed enforcement via `.claude/settings.local.json`.
 </Note>
 
 ### Other Coding Agents
@@ -127,7 +127,7 @@ When you pair an AI agent with a scraping framework, the agent can potentially m
 
 <Steps>
   <Step title="Permission rules (Claude Code only)">
-    Permission rules block `Write(**/*.py)`, `Edit(**/*.py)`, and destructive shell commands at the tool level
+    Permission rules block all Python file modifications (`Write/Edit/Update/MultiEdit(**/*.py)`), sensitive files (`.env`, `secrets/**`), web access (`WebFetch`, `WebSearch`), and destructive commands (`Bash(rm:*)`) at the tool level
   </Step>
   
   <Step title="CLI-only interaction">
