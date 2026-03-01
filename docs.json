@@ -1,0 +1,128 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "ScrapAI",
+  "theme": "aspen",
+  "colors": {
+    "primary": "#2563eb",
+    "light": "#3b82f6",
+    "dark": "#1e40af"
+  },
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/discourselab/scrapai-cli"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/discourselab/scrapai-cli"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/how-it-works",
+              "concepts/architecture",
+              "concepts/database-first"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/cloudflare-bypass",
+              "guides/proxy-escalation",
+              "guides/custom-callbacks",
+              "guides/queue-processing",
+              "guides/checkpoint-resume",
+              "guides/incremental-crawling",
+              "guides/extractors",
+              "guides/data-processors"
+            ]
+          },
+          {
+            "group": "AI Agents",
+            "pages": [
+              "agents/overview",
+              "agents/claude-code",
+              "agents/workflow"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/environment",
+              "configuration/database",
+              "configuration/proxies",
+              "configuration/s3-storage"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "advanced/airflow-scheduling",
+              "advanced/parallel-crawling",
+              "advanced/migration",
+              "advanced/security"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "CLI Reference",
+        "groups": [
+          {
+            "group": "Commands",
+            "pages": [
+              "cli/overview",
+              "cli/setup",
+              "cli/spiders",
+              "cli/crawl",
+              "cli/queue",
+              "cli/data",
+              "cli/inspect",
+              "cli/database",
+              "cli/projects"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Spider Configuration",
+            "pages": [
+              "api/spider-schema",
+              "api/rules",
+              "api/settings",
+              "api/callbacks"
+            ]
+          },
+          {
+            "group": "Extractors",
+            "pages": [
+              "api/extractors-overview",
+              "api/newspaper",
+              "api/trafilatura",
+              "api/custom-extractors",
+              "api/playwright"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
