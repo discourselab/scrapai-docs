@@ -1,0 +1,199 @@
+---
+title: AI-Assisted Maintenance
+description: Automated testing to detect broken spiders and AI-assisted fixing with agent support
+---
+
+Websites redesign constantly. The `health` command tests all spiders in a project, detects failures (extraction broken vs crawling broken), and generates a markdown report for the coding agent to fix.
+
+## Quick Start
+
+```bash
+# Test all spiders in project
+./scrapai health --project news
+
+# Custom options
+./scrapai health --project news --limit 10 --min-content-length 100
+```
+
+**Output:**
+```
+✅ nytimes       5 items, extraction OK
+❌ bbc           5 items, EXTRACTION BROKEN
+❌ techcrunch    0 items, CRAWLING BROKEN
+
+Report saved to: data/news/health/20260302/report.md
+```
+
+**Fix workflow:** Health check detects breakage (5 min) → Agent reads report and fixes (5 min) → Verify (2 min) = **12 min vs 45 min manual**
+
+## How It Works
+
+<Steps>
+  <Step title="Runs test crawl">
+    Crawls each spider with `--limit 5`
+  </Step>
+  <Step title="Checks crawling">
+    Pass if 3+ items found, fail if less (crawling broken)
+  </Step>
+  <Step title="Checks extraction">
+    Pass if content ≥ 50 chars, fail if too short (extraction broken)
+  </Step>
+  <Step title="Generates report">
+    Markdown file with failure details and sample output
+  </Step>
+</Steps>
+
+## Two Failure Modes
+
+<Tabs>
+  <Tab title="Extraction Broken">
+**Symptoms:** Spider finds articles but extracts empty/incomplete fields
+
+**Cause:** CSS selectors changed (e.g., `.article-content` → `.article-body`)
+
+**Report shows:**
+- Items found: 5
+- Problem: Content too short (0 chars)
+- Test URL to inspect
+- Sample output with empty fields
+
+**Fix:** Agent updates extraction selectors
+  </Tab>
+  <Tab title="Crawling Broken">
+**Symptoms:** Spider can't find articles (0-2 items)
+
+**Cause:** URL patterns changed (e.g., `/blog/` → `/articles/`)
+
+**Report shows:**
+- Items found: 0
+- Problem: Spider not finding articles
+- Action: Re-analyze site structure
+
+**Fix:** Agent updates crawling rules
+  </Tab>
+</Tabs>
+
+## Fixing Broken Spiders
+
+### Example: BBC Spider Breaks
+
+**1. Health check detects failure:**
+```bash
+$ ./scrapai health --project news
+❌ bbc  5 items, EXTRACTION BROKEN
+```
+
+**2. Read report:**
+```bash
+$ cat data/news/health/20260302/report.md
+```
+
+Report shows empty content fields and provides test URL.
+
+**3. Agent fixes it:**
+```
+Read data/news/health/20260302/report.md and fix the broken bbc spider.
+```
+
+Agent analyzes site, finds selectors changed from `article[data-component="text-block"]` to `[data-component="article-body"] p`, updates config, imports, and verifies.
+
+**4. Verify:**
+```bash
+$ ./scrapai health --project news
+✅ bbc  5 items, extraction OK
+```
+
+**Time:** 5 minutes total
+
+## Automated Testing
+
+### Cron Setup
+
+```bash
+# Monthly testing (recommended)
+0 2 1 * * cd /path/to/scrapai-cli && ./scrapai health --project news
+
+# Weekly for critical spiders
+0 4 * * 1 cd /path/to/scrapai-cli && ./scrapai health --project critical
+```
+
+### Notifications
+
+Simple wrapper for email/Slack alerts:
+
+```bash
+#!/bin/bash
+./scrapai health --project "$1"
+if [ $? -ne 0 ]; then
+  mail -s "ScrapAI failures in $1" team@example.com < \
+    $(find data/$1/health -name "report.md" | tail -1)
+fi
+```
+
+## Command Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--project` | Project name (required) | - |
+| `--limit` | Items to test per spider | `5` |
+| `--min-content-length` | Min chars to pass extraction | `50` |
+| `--report` | Custom report path | `data/<project>/health/<date>/report.md` |
+
+**Exit codes:** 0 = all passed, 1 = failures detected
+
+## Best Practices
+
+- **Monthly testing** for most spiders (sites don't redesign more often)
+- **Weekly testing** for critical data sources
+- **Adjust thresholds** per content type (`--min-content-length` for short vs long articles)
+- **Keep reports** for trend analysis (which spiders break frequently)
+- **Batch fixes** when multiple spiders break
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="All Tests Failing" icon="circle-xmark">
+Check network, database, or rate limiting issues. Test single spider with verbose logging:
+
+```bash
+./scrapai crawl spider --project news --limit 1 --scrapy-args '-L DEBUG'
+```
+  </Accordion>
+  <Accordion title="Intermittent Failures" icon="shuffle">
+Caused by A/B testing, geo-restrictions, or rate limiting. Run tests multiple times or use `--browser` flag if JS rendering needed.
+  </Accordion>
+  <Accordion title="Agent Can't Fix" icon="wrench">
+Site may have fundamentally changed (static → JS-rendered, paywall added, anti-scraping measures). Try browser mode, manual inspection, or consider if spider is still viable.
+  </Accordion>
+</AccordionGroup>
+
+## Economics
+
+**Time savings at scale:**
+
+| Spiders | Manual | Agent-Assisted | Saved |
+|---------|--------|----------------|-------|
+| 10 | 30 hrs/year | 3 hrs/year | 27 hrs |
+| 50 | 150 hrs/year | 15 hrs/year | 135 hrs |
+| 100 | 300 hrs/year | 30 hrs/year | **270 hrs** |
+
+**Cost (100 spiders):** Manual = $33,300/year vs Agent-assisted = $9,500/year (including $800 in tokens)
+
+*Assumes 4 breaks/spider/year, 45 min manual fix, 10 min agent-assisted fix, $100/hr developer cost*
+
+## Related Guides
+
+<CardGroup cols={2}>
+  <Card title="Incremental Crawling" icon="arrows-rotate" href="/guides/incremental-crawling">
+    Skip unchanged pages with DeltaFetch
+  </Card>
+  <Card title="Queue Processing" icon="list-check" href="/guides/queue-processing">
+    Batch process multiple sites
+  </Card>
+  <Card title="Custom Callbacks" icon="code" href="/guides/custom-callbacks">
+    Complex extraction patterns
+  </Card>
+  <Card title="Cloudflare Bypass" icon="shield" href="/guides/cloudflare-bypass">
+    Handle protected sites
+  </Card>
+</CardGroup>

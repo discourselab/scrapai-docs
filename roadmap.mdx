@@ -1,0 +1,361 @@
+---
+title: 'Roadmap'
+description: 'The future of ScrapAI - from database-first scraping to a shared spider marketplace'
+---
+
+<Card title="Vision" icon="sparkles" color="#7c3aed">
+  **AI agents write spider configs. Humans share them. Stop rebuilding scrapers everyone needs.**
+
+  ScrapAI is infrastructure for reliable, reusable web scraping. Like npm for JavaScript or PyPI for Python, but for web scrapers.
+</Card>
+
+## Current State (v0.x)
+
+<CardGroup cols={2}>
+  <Card title="Database-First Management" icon="database">
+    Write once, use forever with persistent spider storage
+  </Card>
+  <Card title="CloakBrowser Integration" icon="mask">
+    Cloudflare bypass and JavaScript rendering
+  </Card>
+  <Card title="Incremental Crawling" icon="arrows-rotate">
+    DeltaFetch - only scrape new content
+  </Card>
+  <Card title="Smart Proxy Middleware" icon="shield">
+    Auto-escalation when blocked
+  </Card>
+  <Card title="Checkpoint Resume" icon="bookmark">
+    Production-grade pause and resume
+  </Card>
+  <Card title="S3 Cloud Storage" icon="cloud-arrow-up">
+    Automatic cloud backup
+  </Card>
+  <Card title="Multiple Extractors" icon="wand-magic-sparkles">
+    Newspaper, trafilatura, and custom strategies
+  </Card>
+  <Card title="Named Callbacks" icon="code">
+    Custom field extraction
+  </Card>
+  <Card title="Queue System" icon="list-check">
+    Batch processing support
+  </Card>
+  <Card title="Cross-Platform" icon="laptop">
+    Linux, macOS, Windows via WSL
+  </Card>
+</CardGroup>
+
+<Note>
+  **Test coverage:** 26% overall (critical modules: 70-100%)
+</Note>
+
+---
+
+## Phase 1A: Minimal REST API
+
+<Steps>
+  <Step title="Timeline">
+    Q2 2026 - Month 1-2
+  </Step>
+  <Step title="Goal">
+    Enable programmatic access and single-article scraping immediately
+  </Step>
+</Steps>
+
+### Core API Endpoints
+
+<CardGroup cols={1}>
+  <Card title="Single Article Scraping" icon="star" color="#f59e0b">
+    **The killer feature** - Extract single articles without full crawls
+
+    ```bash
+    POST /api/scrape
+    {
+      "url": "https://nytimes.com/2026/03/02/article",
+      "spider": "nytimes"  # Uses saved CSS selectors from DB
+    }
+    # Returns: title, content, author, date in ~2 seconds
+    ```
+
+    **Use cases:**
+    - Extract single article without full crawl
+    - RSS feed integration (scrape on publish)
+    - Real-time monitoring
+    - AI agents testing spider configs
+    - Manual URL paste → instant extraction
+  </Card>
+</CardGroup>
+
+### Additional Endpoints
+
+<AccordionGroup>
+  <Accordion title="POST /api/crawl" icon="play">
+    Trigger full crawl programmatically
+  </Accordion>
+  <Accordion title="GET /api/results/{spider}" icon="database">
+    Get crawl results for a specific spider
+  </Accordion>
+  <Accordion title="GET /api/spiders" icon="list">
+    List all available spiders
+  </Accordion>
+  <Accordion title="GET /api/crawls/{id}/status" icon="chart-line">
+    Check crawl progress in real-time
+  </Accordion>
+</AccordionGroup>
+
+### Technical Stack
+
+<CodeGroup>
+```python FastAPI Framework
+# Async, fast, and modern Python framework
+from fastapi import FastAPI
+app = FastAPI()
+```
+
+```python API Key Auth
+# Secure authentication
+from fastapi.security import APIKeyHeader
+api_key_header = APIKeyHeader(name="X-API-Key")
+```
+
+```python Rate Limiting
+# Prevent abuse
+from slowapi import Limiter
+limiter = Limiter(key_func=get_remote_address)
+```
+</CodeGroup>
+
+<Info>
+  **Why first:** Enables AI agents (OpenClaw, Claude Code, etc.) to integrate immediately. Single-article API validates core value prop before building marketplace infrastructure.
+</Info>
+
+---
+
+## Phase 1B: Spider Library
+
+<Steps>
+  <Step title="Timeline">
+    Q2 2026 - Month 2-3
+  </Step>
+  <Step title="Goal">
+    Make spiders shareable and reusable - multiply API value
+  </Step>
+</Steps>
+
+### Spider Marketplace
+
+<Tabs>
+  <Tab title="Problem">
+    Every developer/AI agent rebuilds scrapers for the same sites (NYT, BBC, Amazon, etc.)
+  </Tab>
+  <Tab title="Solution">
+    Community library of production-ready spider configs
+  </Tab>
+</Tabs>
+
+### Features
+
+<CardGroup cols={2}>
+  <Card title="Spider Registry" icon="book">
+    Browse, search, and download configs from the community
+  </Card>
+  <Card title="Template Gallery" icon="images">
+    Pre-built templates for news, e-commerce, jobs, forums, government
+  </Card>
+  <Card title="Quality Indicators" icon="chart-simple">
+    Downloads, success rate, last updated, community ratings
+  </Card>
+  <Card title="Easy Import" icon="download">
+    One-command installation from registry
+  </Card>
+  <Card title="Versioning" icon="code-branch">
+    Track changes, rollback when sites update
+  </Card>
+  <Card title="Community Driven" icon="users">
+    Collaborate on maintaining spider configs
+  </Card>
+</CardGroup>
+
+### Quick Start
+
+```bash
+# Import a spider from the registry
+./scrapai spiders import --from-registry nytimes
+
+# Publish your own spider
+./scrapai spiders publish my-spider --registry community
+```
+
+### Benefits
+
+<AccordionGroup>
+  <Accordion title="For Developers" icon="code">
+    - Save days of development time
+    - Production-tested configs
+    - Community maintenance
+    - Focus on data, not selectors
+  </Accordion>
+  <Accordion title="For AI Agents" icon="robot">
+    - Skip Phase 1-4 spider building
+    - Instant data access - load config, start scraping
+    - API + 100 spiders = scrape 100 sites programmatically
+    - No wasted compute on selector discovery
+  </Accordion>
+</AccordionGroup>
+
+<Check>
+  **Initial collection:** 50+ spiders for top news sites, e-commerce, and job boards
+</Check>
+
+### Spider Publishing
+
+<Steps>
+  <Step title="Publish Command">
+    `./scrapai spiders publish <spider> --registry community`
+  </Step>
+  <Step title="Documentation">
+    Use the markdown template to document your spider
+  </Step>
+  <Step title="Examples">
+    Provide example URLs and expected output
+  </Step>
+  <Step title="License">
+    Choose a license (MIT, Apache, CC0)
+  </Step>
+</Steps>
+
+<Info>
+  **Why after API:** API creates demand, library multiplies value. Early adopters use API with their spiders, then library makes API 10x more useful.
+</Info>
+
+---
+
+## Phase 2: Quality & Advanced API
+
+<Steps>
+  <Step title="Timeline">
+    Q3 2026
+  </Step>
+  <Step title="Goal">
+    Make it reliable and production-ready
+  </Step>
+</Steps>
+
+### Data Quality & Validation
+
+<Warning>
+  **Problem:** Scraped data might be incomplete or wrong
+</Warning>
+
+#### Features
+
+<CardGroup cols={2}>
+  <Card title="Schema Validation" icon="check-double">
+    Require fields: title, content, date
+  </Card>
+  <Card title="Quality Scoring" icon="medal">
+    Completeness and content length checks
+  </Card>
+  <Card title="Anomaly Detection" icon="triangle-exclamation">
+    Detect site changes and broken selectors
+  </Card>
+  <Card title="Auto-Alerts" icon="bell">
+    Email, Slack, webhook notifications
+  </Card>
+  <Card title="Validation Reports" icon="file-chart-column">
+    Per-crawl quality metrics
+  </Card>
+  <Card title="Early Detection" icon="radar">
+    Catch breakage before it impacts production
+  </Card>
+</CardGroup>
+
+### Advanced API Features
+
+Beyond Phase 1A basics:
+
+<AccordionGroup>
+  <Accordion title="Webhooks" icon="webhook">
+    Real-time notifications for crawl completion and spider failures
+  </Accordion>
+  <Accordion title="WebSockets" icon="signal-stream">
+    Live crawl progress updates
+  </Accordion>
+  <Accordion title="Batch Operations" icon="layer-group">
+    Scrape multiple URLs in one request
+  </Accordion>
+  <Accordion title="OpenAPI/Swagger" icon="book-open">
+    Interactive API documentation
+  </Accordion>
+  <Accordion title="Client Libraries" icon="code">
+    Python and JavaScript SDKs
+  </Accordion>
+  <Accordion title="Advanced Auth" icon="key">
+    OAuth, team management, usage analytics
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+  **Why:** Phase 1A validates core API, Phase 2 adds production features based on real usage
+</Info>
+
+---
+
+## Get Involved
+
+<CardGroup cols={2}>
+  <Card title="Discussions" icon="comments" href="https://github.com/discourselab/scrapai-cli/discussions">
+    Join the community conversation
+  </Card>
+  <Card title="Feature Requests" icon="lightbulb" href="https://github.com/discourselab/scrapai-cli/issues">
+    Suggest new features
+  </Card>
+  <Card title="Spider Contributions" icon="spider">
+    Coming in Phase 1B (Spider Marketplace)
+  </Card>
+  <Card title="GitHub" icon="github" href="https://github.com/discourselab/scrapai-cli">
+    Star the project and contribute
+  </Card>
+</CardGroup>
+
+### Priority Drivers
+
+<Steps>
+  <Step title="Community Feedback">
+    What you actually need drives development
+  </Step>
+  <Step title="Production Pain Points">
+    What breaks in real usage gets fixed first
+  </Step>
+  <Step title="Ecosystem Trends">
+    AI agents and new anti-bot systems shape features
+  </Step>
+</Steps>
+
+---
+
+## Version Timeline
+
+<Tabs>
+  <Tab title="Current">
+    **v0.1.0** - Pre-1.0 alpha/beta
+  </Tab>
+  <Tab title="v0.5.0">
+    **Phase 1A Complete** - Minimal REST API
+  </Tab>
+  <Tab title="v1.0.0">
+    **Phase 1B Complete** - Spider Library + Marketplace
+  </Tab>
+  <Tab title="v2.0.0">
+    **Phase 2 Complete** - Quality/Validation + Advanced API
+  </Tab>
+</Tabs>
+
+<Warning>
+  Breaking changes expected until v1.0. We'll provide migration guides.
+</Warning>
+
+---
+
+<Card title="Maintained by DiscourseLab" icon="heart" href="https://www.discourselab.ai/">
+  Last updated: March 2026
+</Card>

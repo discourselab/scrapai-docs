@@ -36,7 +36,8 @@
               "quickstart",
               "installation",
               "developers",
-              "comparison"
+              "comparison",
+              "roadmap"
             ]
           },
           {
@@ -44,13 +45,15 @@
             "pages": [
               "concepts/how-it-works",
               "concepts/architecture",
-              "concepts/database-first"
+              "concepts/database-first",
+              "concepts/security-first"
             ]
           },
           {
             "group": "Guides",
             "pages": [
               "examples",
+              "guides/ai-assisted-maintenance",
               "guides/cloudflare-bypass",
               "guides/proxy-escalation",
               "guides/custom-callbacks",
