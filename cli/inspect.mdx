@@ -114,8 +114,6 @@ Analysis saved to: data/myproject/inspect/spa_site_com/
 Browser mode waits for JavaScript to execute and renders the final DOM. This is the HTML you should analyze for extraction selectors.
 </Note>
 
-The `--browser` flag automatically handles both JavaScript rendering and Cloudflare bypass when needed.
-
 **Additional browser mode features:**
 - Automatic Cloudflare challenge detection and bypass
 - Cookie extraction for session persistence
@@ -158,7 +156,7 @@ Inspection saves files to `data/<project>/inspect/<domain>/`:
 
 Full HTML content:
 - **HTTP mode**: Raw HTML from server
-- **Browser mode**: Rendered HTML after JavaScript execution, with automatic Cloudflare bypass when detected
+- **Browser mode**: Rendered HTML after JavaScript execution
 
 Use this file with the `analyze` command to discover CSS selectors.
 
@@ -226,8 +224,6 @@ For quick inspection without saving files:
 ```bash
 ./scrapai inspect https://example.com --no-save-html
 ```
-
-Prints analysis to console only, doesn't write files.
 
 ### Logging
 
@@ -501,43 +497,15 @@ Write `spider.json` using discovered selectors:
 
 ## Platform Notes
 
-### Linux (Headless Servers)
-
-For Cloudflare bypass on headless servers:
-
-```bash
-# Install xvfb
-sudo apt-get install xvfb
-
-# Run with xvfb
-xvfb-run -a ./scrapai inspect https://site.com --browser
-```
-
-Or check if xvfb is available:
-
-```bash
-which xvfb-run
-```
-
 ### macOS/Windows
 
 Browser mode uses native display automatically (no xvfb needed).
 
+### Linux (Headless Servers)
+
+Browser automation requires xvfb (covered in Browser Mode section above).
+
 ## Troubleshooting
-
-### Browser Mode: No Display Available
-
-```bash
-❌ ERROR: Browser mode requires a display
-   No display available and xvfb not installed
-```
-
-**Solution:**
-
-```bash
-sudo apt-get install xvfb
-xvfb-run -a ./scrapai inspect https://site.com --browser
-```
 
 ### Browser Launch Failed
 

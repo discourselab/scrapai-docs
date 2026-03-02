@@ -3,7 +3,7 @@ title: Spider JSON Schema
 description: Complete spider configuration schema reference
 ---
 
-Complete JSON schema for spider configuration. Import spiders from JSON files using `scrapai spiders import <file> --project <name>`.
+Complete JSON schema for spider configuration.
 
 ## Root Schema
 
@@ -195,28 +195,17 @@ Complete JSON schema for spider configuration. Import spiders from JSON files us
 
 ## Validation Rules
 
-### Cross-Field Validation
-
 **Rule callbacks must be defined:**
 - If a rule references a `callback` name, that callback must exist in the `callbacks` object
 - Built-in callback `parse_article` is always available
 - Use `"callback": null` for navigation-only rules
 
-**Example error:**
-```
-Rule 0 references undefined callback: 'parse_product'. 
-Defined callbacks: parse_article
-```
-
-### Security Validation
-
 **SSRF Protection:**
-- URLs cannot point to localhost (`localhost`, `127.0.0.1`, `0.0.0.0`, `::1`)
-- URLs cannot point to private IP ranges
+- URLs cannot point to localhost or private IP ranges
 - DNS resolution checked for private IPs
 
 **Injection Prevention:**
-- Spider names sanitized (alphanumeric + underscore/hyphen only)
+- Spider names: alphanumeric + underscore/hyphen only
 - Callback names must be valid Python identifiers
 - Reserved names blocked
 

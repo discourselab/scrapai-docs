@@ -34,11 +34,7 @@ Configure extraction order in spider settings:
 }
 ```
 
-**How it works:**
-1. Try first extractor (e.g., `newspaper`)
-2. If extraction fails or content too short → try next extractor
-3. Continue until successful extraction or all extractors exhausted
-4. Return `ScrapedArticle` or `None`
+Extractors are tried in sequence. If one fails or returns content too short, the next is attempted.
 
 ## Strategy Selection
 
@@ -63,17 +59,11 @@ Configure extraction order in spider settings:
 
 ## Content Validation
 
-All extractors return `ScrapedArticle` which validates:
+All extractors validate:
+- **Title:** min 5 characters
+- **Content:** min 100 characters
 
-**Title:**
-- Must exist
-- Min length: 5 characters
-
-**Content:**
-- Must exist
-- Min length: 100 characters
-
-**If validation fails:** Extractor returns `None`, next strategy is tried
+If validation fails, the next extractor is tried.
 
 ## ScrapedArticle Schema
 
@@ -142,10 +132,6 @@ All extractors return `ScrapedArticle` which validates:
 }
 ```
 
-**Behavior:**
-- Try `newspaper` first (fast, good for news)
-- Fallback to `trafilatura` if newspaper fails
-
 ### Custom Selectors with Fallback
 
 ```json
@@ -163,10 +149,6 @@ All extractors return `ScrapedArticle` which validates:
 }
 ```
 
-**Behavior:**
-- Try custom selectors first (highest accuracy)
-- Fallback to generic extractors if selectors fail
-
 ### JavaScript-Rendered Site
 
 ```json
@@ -180,11 +162,6 @@ All extractors return `ScrapedArticle` which validates:
   }
 }
 ```
-
-**Behavior:**
-- Render page with Playwright
-- Wait for `.article-content` to appear
-- Extract with trafilatura from rendered HTML
 
 ### E-commerce (Custom Only)
 
@@ -205,25 +182,14 @@ All extractors return `ScrapedArticle` which validates:
 }
 ```
 
-**Behavior:**
-- No generic extractors (not article content)
-- Use callback-based extraction only
-
 ## Fallback Behavior
 
-**Extraction fails when:**
+Extraction fails when:
 - Selector returns no match
 - Content/title too short (< 100 chars / < 5 chars)
 - Parser exception
 
-**Next strategy is tried when:**
-- Extractor returns `None`
-- Validation fails on returned `ScrapedArticle`
-
-**All extractors failed:**
-- Page is skipped
-- Error logged
-- No item saved to database
+When all extractors fail, the page is skipped and error logged.
 
 ## Performance Considerations
 
@@ -248,8 +214,6 @@ All extractors return `ScrapedArticle` which validates:
 
 ## Debugging Extraction
 
-**Test extraction order:**
-
 ```bash
 # Analyze HTML structure
 scrapai analyze data/proj/spider/analysis/page.html
@@ -260,19 +224,9 @@ scrapai analyze page.html --test "h1.article-title"
 # Crawl with limit
 scrapai crawl spider --limit 5 --project proj
 
-# View extracted data
+# View extracted data (check 'source' field for which extractor succeeded)
 scrapai show spider 1 --project proj
 ```
-
-**Check which extractor succeeded:**
-
-Look at the `source` field in scraped items:
-
-```bash
-scrapai show spider 1 --project proj
-```
-
-Output shows `source: newspaper4k` or `source: trafilatura`, etc.
 
 ## Related
 

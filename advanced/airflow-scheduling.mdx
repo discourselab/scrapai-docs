@@ -80,8 +80,6 @@ You'll see DAGs for each spider in your database, named `{project}_{spider_name}
 
 ## DAG Generation
 
-DAGs are generated dynamically from your spider database. The generator runs on scheduler refresh (every few minutes).
-
 ### DAG Naming Convention
 
 Pattern: `{project}_{spider_name}`
@@ -104,10 +102,6 @@ dag = DAG(
     max_active_runs=1,  # Prevent concurrent runs
 )
 ```
-
-<Note>
-Code examples in this guide are simplified for clarity. The actual bash commands in the DAG include path changes (`cd {SCRAPAI_PATH}`) and virtual environment activation (`source .venv/bin/activate`).
-</Note>
 
 ### Task Structure
 
@@ -226,22 +220,13 @@ curl -X POST \
 
 ### Execution History
 
-Each DAG shows:
 - Last run status (success/fail)
 - Run duration
 - Success rate over time
 - Task dependencies graph
-
-### Stats Available
-
-- **Duration**: How long each crawl took
-- **Records scraped**: From verify task output
-- **Failures**: Which spiders are broken
-- **Trends**: Performance over time
+- Records scraped from verify task output
 
 ## S3 Integration
-
-Upload crawl results to S3-compatible storage with automatic gzip compression.
 
 ### Configuration
 
@@ -253,8 +238,6 @@ S3_SECRET_KEY=your_secret_key
 S3_ENDPOINT=https://s3.amazonaws.com
 S3_BUCKET=scrapai-crawls
 ```
-
-The DAG generator automatically enables S3 upload if all credentials are present.
 
 ### Upload Behavior
 
@@ -284,10 +267,6 @@ def upload_to_s3(spider_name: str, project: str, **context):
     latest_path.unlink()
 ```
 
-**Compression savings**: Typically 70-90% for JSONL text data.
-
-**S3 path structure**: `s3://bucket/project/spider_name/YYYY-MM-DD/crawl_HHMMSS.jsonl.gz`
-
 ## Access Control (RBAC)
 
 ### Creating Project-Specific Roles
@@ -314,22 +293,6 @@ def upload_to_s3(spider_name: str, project: str, **context):
 | Project Admin | Project DAGs | Yes | Yes | Yes |
 | Project User | Project DAGs | Yes | Yes | No |
 | Viewer | Project DAGs | No | No | No |
-
-### Programmatic Access Control
-
-Uncomment in `airflow/dags/scrapai_spider_dags.py:193-196`:
-
-```python
-dag = DAG(
-    # ... other settings ...
-    access_control={
-        f'{project}_admin': {'can_read', 'can_edit', 'can_delete'},
-        f'{project}_user': {'can_read', 'can_edit'},
-    },
-)
-```
-
-Then create matching roles in Airflow UI.
 
 ## Alerting
 
@@ -462,28 +425,6 @@ DATABASE_URL=postgresql://user:password@host.docker.internal:5432/scrapai
 docker compose -f docker-compose.airflow.yml exec airflow-webserver \
   ping -c 3 host.docker.internal
 ```
-
-## Best Practices
-
-### Resource Management
-
-- Set `max_active_runs=1` to prevent concurrent runs
-- Use `execution_timeout` to prevent runaway tasks
-- Monitor memory usage for large crawls
-
-### Scheduling Strategy
-
-- **High-frequency sites** (news): `@hourly` or `0 */6 * * *`
-- **Daily updates**: `@daily` (midnight) or `0 9 * * *` (9am)
-- **Weekly archives**: `0 0 * * 0` (Sunday midnight)
-- **Manual only**: `None` (on-demand triggering)
-
-### Monitoring
-
-- Set up email alerts for failures
-- Review execution times weekly
-- Check success rates for broken spiders
-- Monitor S3 storage growth
 
 ## See Also
 

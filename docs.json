@@ -50,6 +50,14 @@
             ]
           },
           {
+            "group": "AI Agents",
+            "pages": [
+              "agents/overview",
+              "agents/claude-code",
+              "agents/workflow"
+            ]
+          },
+          {
             "group": "Guides",
             "pages": [
               "examples",
@@ -62,14 +70,6 @@
               "guides/incremental-crawling",
               "guides/extractors",
               "guides/data-processors"
-            ]
-          },
-          {
-            "group": "AI Agents",
-            "pages": [
-              "agents/overview",
-              "agents/claude-code",
-              "agents/workflow"
             ]
           },
           {
@@ -100,11 +100,11 @@
             "pages": [
               "cli/overview",
               "cli/setup",
+              "cli/inspect",
               "cli/spiders",
               "cli/crawl",
-              "cli/queue",
               "cli/data",
-              "cli/inspect",
+              "cli/queue",
               "cli/database",
               "cli/projects"
             ]

@@ -3,7 +3,7 @@ title: Data Processors
 description: Transform extracted values with 8 powerful processors for cleaning, casting, and formatting
 ---
 
-Processors transform extracted values (strip whitespace, cast types, apply regex, etc.). They run sequentially in the order specified.
+Processors transform extracted values (strip whitespace, cast types, apply regex, etc.).
 
 ## Available Processors
 
@@ -570,29 +570,25 @@ Processors run sequentially. Output of one becomes input to the next.
 
 ## Error Handling
 
-Processors handle errors gracefully:
-
 <Tabs>
 <Tab title="Graceful Failures">
 - **strip, replace, lowercase, join:** Return original value if not applicable type
-- **regex:** Returns original value if pattern doesn't match
+- **regex:** Returns original value if no match
 - **cast:** Returns None if conversion fails
 - **parse_datetime:** Returns None if parsing fails
 - **Unknown processor type:** Skipped, logs warning
 </Tab>
 
 <Tab title="Chain Behavior">
-If a processor fails mid-chain, subsequent processors receive the last valid value or None.
+Failed processors pass the last valid value or None to subsequent processors.
 
-**Example:**
 ```json
 [
-  {"type": "strip"},        // "  abc  " → "abc"
-  {"type": "cast", "to": "int"},  // "abc" → None (conversion fails)
-  {"type": "default", "default": 0}  // None → 0
+  {"type": "strip"},                     // "  abc  " → "abc"
+  {"type": "cast", "to": "int"},         // "abc" → None (fails)
+  {"type": "default", "default": 0}      // None → 0
 ]
 ```
-**Final output:** `0`
 </Tab>
 </Tabs>
 
@@ -600,14 +596,12 @@ If a processor fails mid-chain, subsequent processors receive the last valid val
 
 <Steps>
 <Step title="Always strip text fields">
-Prevents whitespace issues:
 ```json
 {"processors": [{"type": "strip"}]}
 ```
 </Step>
 
 <Step title="Use regex before cast">
-Extract numeric part first, then convert type:
 ```json
 [
   {"type": "regex", "pattern": "([\\d.]+)"},
@@ -617,7 +611,6 @@ Extract numeric part first, then convert type:
 </Step>
 
 <Step title="Chain replace for complex cleaning">
-Multiple replace processors handle different cases:
 ```json
 [
   {"type": "replace", "old": "$", "new": ""},
@@ -627,7 +620,6 @@ Multiple replace processors handle different cases:
 </Step>
 
 <Step title="Default at the end">
-Apply fallback after all transformations:
 ```json
 [
   {"type": "strip"},
@@ -638,14 +630,12 @@ Apply fallback after all transformations:
 </Step>
 
 <Step title="Test selectors first">
-Use analyze command before adding processors:
 ```bash
 ./scrapai analyze --test "selector"
 ```
 </Step>
 
 <Step title="Validate processor output">
-Run test crawl and check with show command:
 ```bash
 ./scrapai crawl spider --limit 5 --project proj
 ./scrapai show 1 --project proj
@@ -657,26 +647,10 @@ Run test crawl and check with show command:
 
 ### Processor Returns None
 
-<Steps>
-<Step title="Check processor type">
-Verify processor name is correct (typo?)
-</Step>
-
-<Step title="Validate input type">
-Some processors only work on specific types:
-- `regex`: strings only
-- `join`: lists only
-- `parse_datetime`: strings only
-</Step>
-
-<Step title="Test without processors">
-Remove processors temporarily to see raw extracted value
-</Step>
-
-<Step title="Check logs">
-Look for processor warnings in crawl logs
-</Step>
-</Steps>
+1. **Check processor type** - Verify name is correct
+2. **Validate input type** - `regex` (strings), `join` (lists), `parse_datetime` (strings)
+3. **Test without processors** - See raw extracted value
+4. **Check logs** - Look for processor warnings
 
 ### Wrong Output Type
 
@@ -689,49 +663,15 @@ Add `cast` processor at the end:
 
 ### Regex Not Matching
 
-<Steps>
-<Step title="Test pattern separately">
-Use online regex tester (regex101.com)
-</Step>
-
-<Step title="Check escaping">
-Double backslashes in JSON:
-```json
-{"pattern": "\\$([\\d.]+)"}
-```
-</Step>
-
-<Step title="Add default fallback">
-```json
-[
-  {"type": "regex", "pattern": "([\\d.]+)"},
-  {"type": "default", "default": null}
-]
-```
-</Step>
-</Steps>
+1. **Test pattern** - Use regex101.com
+2. **Check escaping** - Double backslashes in JSON: `{"pattern": "\\$([\\d.]+)"}`
+3. **Add fallback** - `[{"type": "regex", "pattern": "([\\d.]+)"}, {"type": "default", "default": null}]`
 
 ### Date Parsing Fails
 
-<Steps>
-<Step title="Try without format">
-Let dateutil auto-detect:
-```json
-{"type": "parse_datetime"}
-```
-</Step>
-
-<Step title="Specify exact format">
-If auto-detect fails:
-```json
-{"type": "parse_datetime", "format": "%Y-%m-%d"}
-```
-</Step>
-
-<Step title="Check date format">
-View raw extracted value to understand format
-</Step>
-</Steps>
+1. **Try without format** - `{"type": "parse_datetime"}` (auto-detect)
+2. **Specify format** - `{"type": "parse_datetime", "format": "%Y-%m-%d"}`
+3. **Check raw value** - View extracted value to understand format
 
 ## Related Guides
 

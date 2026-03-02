@@ -3,7 +3,7 @@ title: AI-Assisted Maintenance
 description: Automated testing to detect broken spiders and AI-assisted fixing with agent support
 ---
 
-Websites redesign constantly. The `health` command tests all spiders in a project, detects failures (extraction broken vs crawling broken), and generates a markdown report for the coding agent to fix.
+The `health` command tests all spiders, detects failures (extraction vs crawling), and generates a markdown report for automated fixing.
 
 ## Quick Start
 
@@ -24,7 +24,7 @@ Websites redesign constantly. The `health` command tests all spiders in a projec
 Report saved to: data/news/health/20260302/report.md
 ```
 
-**Fix workflow:** Health check detects breakage (5 min) → Agent reads report and fixes (5 min) → Verify (2 min) = **12 min vs 45 min manual**
+**Workflow:** Detect (5 min) → Fix (5 min) → Verify (2 min) = **12 min vs 45 min manual**
 
 ## How It Works
 
@@ -47,29 +47,22 @@ Report saved to: data/news/health/20260302/report.md
 
 <Tabs>
   <Tab title="Extraction Broken">
-**Symptoms:** Spider finds articles but extracts empty/incomplete fields
+**Symptoms:** Finds articles but extracts empty/incomplete fields
 
 **Cause:** CSS selectors changed (e.g., `.article-content` → `.article-body`)
 
-**Report shows:**
-- Items found: 5
-- Problem: Content too short (0 chars)
-- Test URL to inspect
-- Sample output with empty fields
+**Report shows:** Items found, content too short, test URL, sample output
 
-**Fix:** Agent updates extraction selectors
+**Fix:** Update extraction selectors
   </Tab>
   <Tab title="Crawling Broken">
-**Symptoms:** Spider can't find articles (0-2 items)
+**Symptoms:** Can't find articles (0-2 items)
 
 **Cause:** URL patterns changed (e.g., `/blog/` → `/articles/`)
 
-**Report shows:**
-- Items found: 0
-- Problem: Spider not finding articles
-- Action: Re-analyze site structure
+**Report shows:** Zero items, re-analyze instruction
 
-**Fix:** Agent updates crawling rules
+**Fix:** Update crawling rules
   </Tab>
 </Tabs>
 
@@ -83,27 +76,19 @@ $ ./scrapai health --project news
 ❌ bbc  5 items, EXTRACTION BROKEN
 ```
 
-**2. Read report:**
-```bash
-$ cat data/news/health/20260302/report.md
-```
-
-Report shows empty content fields and provides test URL.
-
-**3. Agent fixes it:**
+**2. Agent fixes it:**
 ```
 Read data/news/health/20260302/report.md and fix the broken bbc spider.
 ```
 
-Agent analyzes site, finds selectors changed from `article[data-component="text-block"]` to `[data-component="article-body"] p`, updates config, imports, and verifies.
+Agent analyzes site, finds selectors changed from `article[data-component="text-block"]` to `[data-component="article-body"] p`, and updates config.
 
-**4. Verify:**
+**3. Verify:**
 ```bash
 $ ./scrapai health --project news
 ✅ bbc  5 items, extraction OK
 ```
 
-**Time:** 5 minutes total
 
 ## Automated Testing
 
@@ -118,8 +103,6 @@ $ ./scrapai health --project news
 ```
 
 ### Notifications
-
-Simple wrapper for email/Slack alerts:
 
 ```bash
 #!/bin/bash
@@ -143,10 +126,10 @@ fi
 
 ## Best Practices
 
-- **Monthly testing** for most spiders (sites don't redesign more often)
-- **Weekly testing** for critical data sources
-- **Adjust thresholds** per content type (`--min-content-length` for short vs long articles)
-- **Keep reports** for trend analysis (which spiders break frequently)
+- **Monthly testing** for most spiders
+- **Weekly testing** for critical sources
+- **Adjust thresholds** per content type (`--min-content-length`)
+- **Keep reports** for trend analysis
 - **Batch fixes** when multiple spiders break
 
 ## Troubleshooting
@@ -160,10 +143,10 @@ Check network, database, or rate limiting issues. Test single spider with verbos
 ```
   </Accordion>
   <Accordion title="Intermittent Failures" icon="shuffle">
-Caused by A/B testing, geo-restrictions, or rate limiting. Run tests multiple times or use `--browser` flag if JS rendering needed.
+Caused by A/B testing, geo-restrictions, or rate limiting. Run tests multiple times or use `--browser` if JS rendering needed.
   </Accordion>
   <Accordion title="Agent Can't Fix" icon="wrench">
-Site may have fundamentally changed (static → JS-rendered, paywall added, anti-scraping measures). Try browser mode, manual inspection, or consider if spider is still viable.
+Site fundamentally changed (static → JS-rendered, paywall, anti-scraping). Try browser mode, manual inspection, or reconsider viability.
   </Accordion>
 </AccordionGroup>
 

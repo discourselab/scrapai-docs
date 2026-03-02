@@ -105,41 +105,11 @@ echo "$SPIDERS" | tr ' ' '\n' | parallel \
 
 ## Resource Calculation
 
-### Memory-Based Parallelism
+The script automatically calculates optimal parallelism:
 
-The script allocates memory per spider type:
-
-- **Regular spiders**: 200 MB each
-- **Cloudflare spiders**: 500 MB each (browser automation overhead)
-- **Mixed fleet**: Weighted average
-
-**Formula:**
-
-```bash
-AVAILABLE_MEM_MB=$(free -m | awk '/^Mem:/ {print $7}')
-MEM_PARALLEL=$(( (AVAILABLE_MEM_MB - 2048) / MEM_PER_SPIDER ))
-```
-
-Reserves 2GB for system, divides remaining memory by per-spider allocation.
-
-### CPU-Based Parallelism
-
-```bash
-CPU_CORES=$(nproc)
-CPU_PARALLEL=$(( CPU_CORES * 80 / 100 ))
-```
-
-Uses 80% of available cores to avoid saturating the system.
-
-### Final Parallelism
-
-```bash
-PARALLEL=$(( MEM_PARALLEL < CPU_PARALLEL ? MEM_PARALLEL : CPU_PARALLEL ))
-[ "$PARALLEL" -lt 2 ] && PARALLEL=2
-[ "$PARALLEL" -gt 20 ] && PARALLEL=20
-```
-
-Takes the minimum of memory-based and CPU-based limits, clamped between 2 and 20.
+- **Memory allocation**: Regular spiders (200 MB), Cloudflare spiders (500 MB)
+- **CPU limit**: 80% of available cores
+- **Final parallelism**: Minimum of memory and CPU limits, clamped between 2-20
 
 ## Example Output
 
@@ -235,93 +205,31 @@ parallel --joblog crawl_log.txt --resume ...
 
 ## Resource Management
 
-### Memory Limits
+- **Regular spiders**: 200 MB allocation
+- **Cloudflare spiders**: 500 MB allocation (includes browser overhead)
+- **Output files**: Separate paths per spider prevent I/O contention
 
-**Why 200MB for regular spiders?**
+## Best Practices
 
-- Scrapy framework: ~50 MB
-- Downloaded pages in memory: ~100 MB
-- Extraction libraries: ~50 MB
-
-**Why 500MB for Cloudflare spiders?**
-
-- Above base: 200 MB
-- Browser process (Chromium): ~200 MB
-- Rendering overhead: ~100 MB
-
-### CPU Scheduling
-
-GNU parallel uses fair CPU scheduling:
-
-- Jobs share CPU time equally
-- I/O-bound tasks (most scrapers) yield CPU automatically
-- Network-bound tasks have minimal CPU impact
-
-### Disk I/O
-
-Each spider writes to separate output file:
-
-```
-data/{spider_name}/YYYY-MM-DD/crawl_HHMMSS.jsonl
-```
-
-No I/O contention between spiders.
-
-## Patterns and Best Practices
-
-### Small Fleet (< 10 spiders)
+### By Fleet Size
 
 ```bash
-# Just run them all
+# Small fleet (< 10 spiders): Run all at once
 bin/parallel-crawl myproject
-```
 
-Auto-detection handles everything.
+# Medium fleet (10-50): Prioritize important spiders first
+bin/parallel-crawl myproject priority_spider1 priority_spider2
 
-### Medium Fleet (10-50 spiders)
-
-```bash
-# Prioritize by importance
-bin/parallel-crawl myproject high_priority_1 high_priority_2 ...
-
-# Then run the rest
-bin/parallel-crawl myproject
-```
-
-### Large Fleet (50+ spiders)
-
-**Split by type:**
-
-```bash
-# Run Cloudflare spiders first (slower, memory-intensive)
-bin/parallel-crawl myproject $(./scrapai spiders list --project myproject | \
-    grep -i cloudflare | awk '{print $2}')
-
-# Then run regular spiders
-bin/parallel-crawl myproject $(./scrapai spiders list --project myproject | \
-    grep -v cloudflare | awk '{print $2}')
-```
-
-**Split by schedule:**
-
-```bash
-# Morning batch (9am cron)
-bin/parallel-crawl news bbc guardian cnn reuters
-
-# Evening batch (9pm cron)
-bin/parallel-crawl news nytimes wapo ft bloomberg
+# Large fleet (50+): Split by type
+bin/parallel-crawl myproject $(./scrapai spiders list --project myproject | grep -i cloudflare | awk '{print $2}')
+bin/parallel-crawl myproject $(./scrapai spiders list --project myproject | grep -v cloudflare | awk '{print $2}')
 ```
 
 ### Memory-Constrained Systems
 
 ```bash
-# Reduce parallelism
+# Reduce parallelism or run sequentially
 echo "$SPIDERS" | tr ' ' '\n' | parallel -j 2 ...
-
-# Or run sequentially
-for spider in $SPIDERS; do
-    ./scrapai crawl $spider --project myproject
-done
 ```
 
 ## Comparison with Airflow
@@ -373,14 +281,9 @@ Runs at 2am daily.
 ### Staggered Batches
 
 ```bash
-# Batch 1: 2am
+# Multiple batches throughout the day
 0 2 * * * cd /path/to/scrapai-cli && bin/parallel-crawl news $(cat batch1.txt)
-
-# Batch 2: 8am
 0 8 * * * cd /path/to/scrapai-cli && bin/parallel-crawl news $(cat batch2.txt)
-
-# Batch 3: 2pm
-0 14 * * * cd /path/to/scrapai-cli && bin/parallel-crawl news $(cat batch3.txt)
 ```
 
 ## Troubleshooting

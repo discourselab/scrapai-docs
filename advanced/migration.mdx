@@ -239,39 +239,11 @@ with open('products.json', 'w') as f:
 
 ### Key Differences
 
-**BeautifulSoup:**
-- Manual HTTP requests
-- Manual link extraction
-- Manual JSON export
-- No retry logic
-- No rate limiting
-
-**ScrapAI:**
-- Scrapy handles requests (retries, delays, middleware)
-- Automatic link extraction via rules
-- Automatic JSONL export
-- Built-in retry and error handling
-- Configurable rate limiting
+ScrapAI provides automatic request handling, link extraction, retries, rate limiting, and JSONL export - eliminating manual boilerplate code.
 
 ## Scrapling Migration
 
-From `README.md:32`:
-
-> For single-site scraping with fine-grained control, use Scrapling. ScrapAI is for multi-site fleets.
-
-**When to migrate from Scrapling:**
-
-- You have 10+ sites to scrape
-- Sites have similar structure (e.g., all news sites)
-- You want database-driven management
-- You need scheduling and monitoring
-
-**When to keep Scrapling:**
-
-- Single site with complex interaction
-- Heavy JavaScript rendering
-- Fine-grained control needed
-- Login/auth flows
+Migrate from Scrapling when managing 10+ sites with similar structure. Keep Scrapling for single sites with complex interactions, heavy JavaScript, or login flows.
 
 ### Example Migration
 
@@ -389,81 +361,11 @@ allowed = {
 
 ## Validation During Migration
 
-All configs go through strict validation before import. From `core/schemas.py:215-402`:
+All configs are validated before import:
 
-### Spider Name Validation
-
-```python
-@field_validator("name")
-@classmethod
-def validate_name(cls, v):
-    if not re.match(r"^[a-zA-Z0-9_-]+$", v):
-        raise ValueError(
-            f"Invalid spider name: {v}. "
-            "Only alphanumeric characters, underscores, and hyphens allowed."
-        )
-    return v
-```
-
-### URL Validation (SSRF Protection)
-
-```python
-@field_validator("source_url", "start_urls")
-@classmethod
-def validate_urls(cls, v):
-    allowed_schemes = {"http", "https"}
-    
-    # Check scheme
-    if not any(url.lower().startswith(f"{scheme}://") for scheme in allowed_schemes):
-        raise ValueError(
-            f"Invalid URL scheme: {url}. Only HTTP and HTTPS are allowed."
-        )
-    
-    # Prevent SSRF to localhost/private IPs
-    parsed = urlparse(url)
-    hostname = parsed.hostname
-    if hostname in ("localhost", "0.0.0.0"):
-        raise ValueError(
-            f"URL points to localhost: {url}. Blocked to prevent SSRF attacks."
-        )
-    
-    # Check if resolves to private IP
-    ip = ipaddress.ip_address(hostname)
-    if ip.is_private or ip.is_loopback:
-        raise ValueError(
-            f"URL points to private IP: {url}. Blocked to prevent SSRF attacks."
-        )
-```
-
-### Callback Validation
-
-```python
-@field_validator("callbacks")
-@classmethod
-def validate_callbacks(cls, v):
-    reserved_names = {
-        "parse_article",
-        "parse_start_url",
-        "start_requests",
-        "from_crawler",
-        "closed",
-        "parse",
-    }
-    
-    for callback_name in v.keys():
-        # Must be valid Python identifier
-        if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", callback_name):
-            raise ValueError(
-                f"Invalid callback name: '{callback_name}'. "
-                "Must be a valid Python identifier."
-            )
-        
-        # Must not be reserved
-        if callback_name in reserved_names:
-            raise ValueError(
-                f"Callback name '{callback_name}' is reserved and cannot be used."
-            )
-```
+- **Spider names**: Alphanumeric characters, underscores, and hyphens only
+- **URLs**: HTTP/HTTPS only, with SSRF protection (blocks localhost and private IPs)
+- **Callbacks**: Must be valid Python identifiers, cannot use reserved names (`parse`, `parse_article`, etc.)
 
 ## Testing After Migration
 
@@ -545,33 +447,16 @@ time ./scrapai crawl new_spider --project myproject
 
 ## Common Pitfalls
 
-### Regex Patterns
+**Regex Patterns**: Copy patterns directly from Scrapy, then test with `./scrapai crawl --limit 5`.
 
-**Problem**: Scrapy uses Python regex, ScrapAI uses the same.
+**Relative URLs**: Scrapy handles `urljoin()` automatically. Use `css: "a::attr(href)"`.
 
-**Solution**: Copy patterns directly, but test with `./scrapai crawl --limit 5`.
+**Custom Middleware**:
+- Proxy rotation: Use built-in proxy escalation
+- Cloudflare: Enable `CLOUDFLARE_ENABLED: true`
+- Custom headers: Add to spider settings
 
-### Relative vs. Absolute URLs
-
-**Problem**: Old spider might use `urljoin()` for relative URLs.
-
-**Solution**: Scrapy handles this automatically. Just use `css: "a::attr(href)"`.
-
-### Custom Middleware
-
-**Problem**: Old spider uses custom Scrapy middleware.
-
-**Solution**:
-- **Proxy rotation**: Use ScrapAI's built-in proxy escalation
-- **Cloudflare**: Enable `CLOUDFLARE_ENABLED: true`
-- **Custom headers**: Add to spider settings
-- **Other middleware**: May require framework changes (contribute!)
-
-### Dynamic Content (JavaScript)
-
-**Problem**: Old spider uses Selenium or Playwright.
-
-**Solution**: Use ScrapAI's Playwright extractor:
+**JavaScript/Dynamic Content**: Use ScrapAI's Playwright extractor:
 
 ```json
 {

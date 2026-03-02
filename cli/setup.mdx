@@ -3,8 +3,6 @@ title: "Setup & Verification"
 description: "Installation, environment setup, and verification commands"
 ---
 
-The setup commands initialize your ScrapAI environment, install dependencies, and verify everything is working correctly.
-
 ## setup
 
 Install virtual environment, dependencies, and initialize database.
@@ -81,17 +79,15 @@ scrapai setup
 
 ### Skip Dependencies
 
-If you've already installed dependencies manually or made changes:
+Runs migrations and permission checks without reinstalling packages:
 
 ```bash
 ./scrapai setup --skip-deps
 ```
 
-This runs migrations and permission checks without reinstalling packages.
-
 ## verify
 
-Verify environment setup without installing anything.
+Verify environment setup without installing anything. Useful for troubleshooting or CI/CD pipelines.
 
 ### Syntax
 
@@ -137,19 +133,11 @@ $ ./scrapai verify
    Run: ./scrapai setup
 ```
 
-### Use Cases
-
-- **After cloning repository**: Verify setup before starting work
-- **CI/CD pipelines**: Check environment before running tests
-- **Troubleshooting**: Diagnose setup issues without modifying anything
-
 ## Claude Code Permissions
 
-The setup command configures Claude Code agent permissions in `.claude/settings.local.json`.
+Setup configures Claude Code agent permissions in `.claude/settings.local.json`.
 
 ### Allow List
-
-Commands and operations the agent **can** perform:
 
 ```json
 [
@@ -168,8 +156,6 @@ Commands and operations the agent **can** perform:
 ```
 
 ### Deny List
-
-Commands and operations the agent **cannot** perform:
 
 ```json
 [

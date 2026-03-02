@@ -79,10 +79,6 @@ For Cloudflare-protected sites:
 </Step>
 </Steps>
 
-<Tip>
-**Smart resource usage:** Start with default HTTP (fast). Escalate to `--browser` if content is JS-rendered. Use `--browser` only when seeing challenge pages or 403/503 errors.
-</Tip>
-
 ## Strategies
 
 ### Hybrid Mode (Recommended)
@@ -106,18 +102,10 @@ Do NOT set `CONCURRENT_REQUESTS` - uses Scrapy default of 16 for optimal perform
 }
 ```
 
-**How it works:**
-1. Browser verifies Cloudflare once and caches cookies
-2. Subsequent requests use fast HTTP with cached cookies
-3. Auto-refreshes cookies every 10 minutes
-4. Falls back to browser if cookies become invalid
-
 ### Browser-Only Mode (Legacy)
 
 <Warning>
-Only use if hybrid mode fails. Browser for every request. **Much slower.**
-
-Requires `CONCURRENT_REQUESTS: 1` to prevent browser conflicts.
+**Much slower** - uses browser for every request. Requires `CONCURRENT_REQUESTS: 1` to prevent browser conflicts.
 </Warning>
 
 ```json spider.json
@@ -185,12 +173,6 @@ Requires `CONCURRENT_REQUESTS: 1` to prevent browser conflicts.
 **Browser operation timeout:** 300 seconds (5 minutes) per operation to prevent infinite hangs.
 </Note>
 
-If a browser operation exceeds 300 seconds, the crawl fails with a `TimeoutError` instead of hanging forever. This protects against:
-- Browser subprocess hangs
-- Network stalls
-- Infinite CF challenge loops
-- Cross-thread asyncio deadlocks
-
 **Typical operation times:**
 - CF verification: 10-60 seconds
 - Page load: 5-30 seconds
@@ -208,13 +190,7 @@ If you consistently hit the 300s timeout, investigate:
 
 ### Crawl Hangs at "Getting/refreshing CF cookies"
 
-**Symptoms:** Browser opens but never navigates. Logs show "Getting/refreshing CF cookies" but no progress.
-
-**Possible causes:**
-1. Asyncio event loop mismatch (fixed in latest version)
-2. Browser subprocess issues - Chrome/nodriver incompatible with thread-based event loop
-3. Display/X11 issues on Linux servers
-4. Network/firewall blocking browser traffic
+**Symptoms:** Browser opens but never navigates.
 
 **Solutions:**
 <Steps>
@@ -243,14 +219,6 @@ Verify CPU, memory, and disk space availability
 </Steps>
 
 ### Works on One Machine But Not Another
-
-**Environmental factors affecting browser subprocesses:**
-- Python/asyncio version differences
-- Display environment (X11 vs Wayland vs headless)
-- Chrome/Chromium version and availability
-- System resources and timing (race conditions)
-- Network conditions (DNS, latency, firewalls)
-- Security software interfering with browser
 
 **Debugging steps:**
 <Steps>
@@ -314,7 +282,7 @@ Closed browser
 ### Title Contamination
 
 <Tip>
-If extracted titles show wrong text (e.g., "Related Articles" instead of actual title), set `CF_WAIT_SELECTOR` to the main title element.
+If extracted titles show wrong text, set `CF_WAIT_SELECTOR` to the main title element to capture HTML before related content loads.
 </Tip>
 
 ```json
@@ -324,8 +292,6 @@ If extracted titles show wrong text (e.g., "Related Articles" instead of actual 
   }
 }
 ```
-
-This captures HTML before related content loads, preventing contamination.
 
 ## Related Guides
 

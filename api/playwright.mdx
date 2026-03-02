@@ -31,12 +31,6 @@ Playwright extractor uses a headless browser to render JavaScript-heavy pages be
 }
 ```
 
-**Behavior:**
-1. Playwright renders page in browser
-2. Waits for page load
-3. Extracts HTML
-4. Trafilatura processes rendered HTML
-
 ### Wait for Selector
 
 ```json
@@ -49,9 +43,7 @@ Playwright extractor uses a headless browser to render JavaScript-heavy pages be
 }
 ```
 
-**Behavior:**
-- Wait for `.article-content` element to appear (max 30s)
-- If selector doesn't appear → extraction fails
+Waits for `.article-content` element (max 30s). Extraction fails if selector doesn't appear.
 
 ### Additional Delay
 
@@ -65,10 +57,7 @@ Playwright extractor uses a headless browser to render JavaScript-heavy pages be
 }
 ```
 
-**Behavior:**
-- Wait for `.loaded` element
-- Wait additional 5 seconds
-- Then extract
+Waits for `.loaded` element, then waits an additional 5 seconds before extraction.
 
 ### Infinite Scroll
 
@@ -86,13 +75,6 @@ Playwright extractor uses a headless browser to render JavaScript-heavy pages be
   ]
 }
 ```
-
-**Behavior:**
-1. Wait for `.quote` element
-2. Scroll to bottom
-3. Wait 2 seconds
-4. Repeat up to 10 times
-5. Extract all content from full page
 
 ## Settings Reference
 
@@ -205,9 +187,7 @@ ul.items li:nth-child(3)  /* Wait for 3rd item */
 }
 ```
 
-**Why:**
-- Browser instances use significant memory
-- Too many concurrent browsers → system overload
+Browser instances use significant memory; too many concurrent browsers cause system overload.
 
 ### Use Playwright Only When Needed
 
@@ -230,10 +210,7 @@ ul.items li:nth-child(3)  /* Wait for 3rd item */
 }
 ```
 
-**Behavior:**
-- Most pages use fast trafilatura
-- Only JS-heavy pages trigger Playwright
-- Average concurrency remains high
+Most pages use fast trafilatura; only JS-heavy pages trigger Playwright, keeping average concurrency high.
 
 ## Examples
 
@@ -345,40 +322,13 @@ If selector not found → Playwright will timeout (30s)
 
 **Timeout waiting for selector:**
 - Selector doesn't exist on page
-- Selector appears after 30s (increase timeout not supported - use delay instead)
+- Selector appears after 30s (use `PLAYWRIGHT_DELAY` instead)
 - JavaScript error prevents rendering
-
-**Solution:** Use generic selector or remove `PLAYWRIGHT_WAIT_SELECTOR`
+- **Solution:** Use generic selector or remove `PLAYWRIGHT_WAIT_SELECTOR`
 
 **Content still empty:**
-- Delay too short (increase `PLAYWRIGHT_DELAY`)
-- Selector correct but content loads separately
-- Page requires interaction (click, scroll) - use `INFINITE_SCROLL` if applicable
-
-## Browser Client
-
-Playwright uses `BrowserClient` from `utils/browser.py`:
-
-**Features:**
-- Headless Chrome
-- Async context manager
-- Wait for selector support
-- Infinite scroll support
-- Returns rendered HTML
-
-**Usage in extractors:**
-```python
-async with BrowserClient() as browser:
-    if await browser.goto(
-        url,
-        wait_for_selector,
-        additional_delay,
-        enable_scroll,
-        max_scrolls,
-        scroll_delay
-    ):
-        html = await browser.get_html()
-```
+- Increase `PLAYWRIGHT_DELAY`
+- Page requires interaction - use `INFINITE_SCROLL` if applicable
 
 ## Related
 

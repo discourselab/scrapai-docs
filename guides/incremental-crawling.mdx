@@ -60,42 +60,26 @@ By default, hashes are stored in `.scrapy/deltafetch/<spider_name>/`. You can cu
 }
 ```
 
-### Reset (For Testing)
+### Reset Options
 
-<Warning>
-Setting `DELTAFETCH_RESET: true` clears all stored hashes and re-crawls everything once. Remove this setting after the reset crawl.
-</Warning>
-
+**Via configuration (recommended for testing):**
 ```json spider.json
 {
   "settings": {
     "DELTAFETCH_ENABLED": true,
-    "DELTAFETCH_RESET": true
+    "DELTAFETCH_RESET": true  // Remove after one crawl
   }
 }
 ```
 
-## Reset Options
-
-### Delete All Hash Storage
-
+**Via file system:**
 ```bash
+# Delete all spiders
 rm -rf .scrapy/deltafetch/
-```
 
-Removes all DeltaFetch data for all spiders.
-
-### Delete Specific Spider's Data
-
-```bash
+# Delete specific spider
 rm -rf .scrapy/deltafetch/<spider_name>/
 ```
-
-Removes DeltaFetch data for one spider only.
-
-### One-Time Reset via Config
-
-Set `DELTAFETCH_RESET: true` in spider settings. This re-crawls everything once, then remove the setting.
 
 ## Complete Example
 
@@ -298,26 +282,7 @@ File should have non-zero size
 
 ### Skipping Pages That Should Be Re-Crawled
 
-<Warning>
-If you need to force re-crawl all pages, delete the hash database.
-</Warning>
-
-**Option 1: Delete hash database**
-```bash
-rm -rf .scrapy/deltafetch/<spider_name>/
-```
-
-**Option 2: Use DELTAFETCH_RESET**
-```json
-{
-  "settings": {
-    "DELTAFETCH_ENABLED": true,
-    "DELTAFETCH_RESET": true
-  }
-}
-```
-
-Run crawl once, then remove `DELTAFETCH_RESET` setting.
+Force re-crawl by deleting hash database or using `DELTAFETCH_RESET: true` (see Reset Options above).
 
 ### Pages Changed But Not Detected
 
@@ -356,120 +321,24 @@ mv .scrapy/deltafetch/<spider_name>/ .scrapy/deltafetch/<spider_name>.old/
 ## Limitations
 
 <Note>
-**Important limitations:**
-
-1. **First crawl is always full**
-   - No prior hashes to compare against
-   - All pages are scraped
-
-2. **Detects content changes only**
-   - New pages are always crawled
-   - Only existing page changes are detected
-
-3. **Hash database is local**
-   - Not synced across machines
-   - Each machine maintains separate hash storage
-
-4. **Content-based detection**
-   - Minor metadata changes (timestamps) may not trigger re-crawl
-   - Focuses on main content body
+1. **First crawl is always full** - no prior hashes to compare
+2. **Hash database is local** - not synced across machines
+3. **Content-based detection** - minor metadata changes (timestamps, ads) may not trigger re-crawl
 </Note>
 
 ## Use Cases
 
-<Tabs>
-<Tab title="News Sites">
-**Scenario:** Daily news site with 1000s of articles
-
-**Benefits:**
-- First crawl: 5000 articles
-- Daily crawls: Only 50-100 new articles
-- 95-98% reduction in pages processed
-
-**Setup:**
-```json
-{
-  "settings": {
-    "DELTAFETCH_ENABLED": true
-  }
-}
-```
-</Tab>
-
-<Tab title="Product Catalogs">
-**Scenario:** E-commerce site with price updates
-
-**Benefits:**
-- Skip products with unchanged prices
-- Only scrape new products and price changes
-- Reduce server load
-
-**Setup:**
-```json
-{
-  "settings": {
-    "DELTAFETCH_ENABLED": true,
-    "DOWNLOAD_DELAY": 2
-  }
-}
-```
-</Tab>
-
-<Tab title="Job Boards">
-**Scenario:** Job listing site with frequent updates
-
-**Benefits:**
-- Skip old/filled positions
-- Focus on new job postings
-- Faster monitoring
-
-**Setup:**
-```json
-{
-  "settings": {
-    "DELTAFETCH_ENABLED": true
-  }
-}
-```
-</Tab>
-
-<Tab title="Documentation Sites">
-**Scenario:** API documentation with occasional updates
-
-**Benefits:**
-- Only re-scrape updated pages
-- Detect documentation changes
-- Efficient monitoring
-
-**Setup:**
-```json
-{
-  "settings": {
-    "DELTAFETCH_ENABLED": true,
-    "DELTAFETCH_DIR": ".scrapy/deltafetch/docs"
-  }
-}
-```
-</Tab>
-</Tabs>
+**Ideal for:**
+- **News sites** - Daily updates with 1000s of articles (95-98% reduction)
+- **Product catalogs** - Skip unchanged prices, only scrape new products and updates
+- **Job boards** - Focus on new postings, skip filled positions
+- **Documentation sites** - Detect updated pages, efficient monitoring
 
 ## Best Practices
 
 <Steps>
 <Step title="Enable for recurring crawls">
-DeltaFetch is most useful for spiders that run repeatedly (daily, weekly, monthly)
-</Step>
-
-<Step title="Not needed for one-time crawls">
-If you only crawl a site once, DeltaFetch provides no benefit
-</Step>
-
-<Step title="Combine with scheduled crawls">
-Use with cron jobs or scheduled tasks:
-```bash
-# crontab entry - daily at 2 AM
-0 2 * * * cd /path/to/scrapai && ./scrapai crawl myspider --project proj
-```
+DeltaFetch is most useful for spiders that run repeatedly (daily, weekly, monthly). Not needed for one-time crawls.
 </Step>
 
 <Step title="Monitor storage growth">

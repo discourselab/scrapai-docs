@@ -7,43 +7,16 @@ ScrapAI includes **SmartProxyMiddleware** that intelligently manages proxy usage
 
 ## How It Works
 
-**Auto Mode Strategy (default):**
+SmartProxyMiddleware uses intelligent escalation:
 
-<Steps>
-<Step title="Start with direct connections">
-Fast and free - no proxy overhead
-</Step>
-
-<Step title="Detect blocking">
-Automatic detection of 403/429 errors
-</Step>
-
-<Step title="Retry with datacenter proxy">
-Cheap and fast fallback option
-</Step>
-
-<Step title="Learn domain patterns">
-Remembers which domains need proxies
-</Step>
-
-<Step title="Proactive proxy usage">
-Uses proxy immediately for known-blocked domains
-</Step>
-
-<Step title="Expert-in-the-loop">
-Asks user before using expensive residential proxies
-</Step>
-</Steps>
+1. **Direct connections first** - Fast and free
+2. **Detect blocking** - Automatic detection of 403/429 errors
+3. **Datacenter proxy fallback** - Cheap, fast option
+4. **Learn domain patterns** - Remembers which domains need proxies
+5. **Expert-in-the-loop** - Asks before using expensive residential proxies
 
 <Note>
-**Smart cost control:**
-- Direct connections are faster and free
-- Proxies only used when necessary
-- Datacenter proxies preferred (cheaper)
-- Residential proxies require explicit user approval
-- Learns per-domain blocking patterns
-- Reduces proxy bandwidth costs by 80-90%
-- **No surprise costs** - expensive proxies need human approval
+**Smart cost control:** Direct connections when possible, datacenter proxies for blocks, residential proxies only with explicit approval. Reduces proxy costs by 80-90%.
 </Note>
 
 ## Setup
@@ -83,35 +56,15 @@ Since SmartProxyMiddleware uses a single proxy connection, **use rotating IP por
 
 ### Auto Mode (Default) - Expert-in-the-Loop
 
-<Tabs>
-<Tab title="Default Behavior">
 ```bash
 # Auto mode (default) - smart escalation
 ./scrapai crawl spider_name --project proj --limit 10
-```
-</Tab>
 
-<Tab title="Explicit Auto">
-```bash
 # Explicit auto mode
 ./scrapai crawl spider_name --project proj --limit 10 --proxy-type auto
 ```
-</Tab>
-</Tabs>
 
-**Auto mode flow:**
-
-<Steps>
-<Step title="Start with direct connections">
-✅ Fast, free connections - no proxy overhead
-</Step>
-
-<Step title="Detect block (403/429)">
-✅ Automatically retry with datacenter proxy (cheap, fast)
-</Step>
-
-<Step title="Datacenter fails">
-⚠️ **Expert-in-the-loop prompt appears:**
+When datacenter proxy fails, you'll see:
 
 ```
 ⚠️  EXPERT-IN-THE-LOOP: Datacenter proxy failed for some domains
@@ -122,12 +75,6 @@ Blocked domains: example.com, site.org
 To proceed with residential proxy, run:
   ./scrapai crawl spider_name --project proj --proxy-type residential
 ```
-</Step>
-
-<Step title="User decides">
-👤 You choose whether to use expensive residential proxies
-</Step>
-</Steps>
 
 <Warning>
 **Cost protection:** Residential proxies require explicit user approval - no surprise costs!
@@ -146,16 +93,6 @@ To proceed with residential proxy, run:
 ./scrapai crawl spider_name --project proj --limit 10 --proxy-type residential
 ```
 </CodeGroup>
-
-<Note>
-**All modes follow smart strategy:**
-- ✅ Start with direct connections (fast, free)
-- ✅ Only use proxy when blocked (403/429 errors)
-- ✅ Learn which domains need proxies
-- ✅ Use proxy proactively for blocked domains
-
-The `--proxy-type` flag controls escalation behavior and cost limits.
-</Note>
 
 ## Configuration
 
@@ -185,58 +122,9 @@ SmartProxyMiddleware tracks detailed usage statistics:
    Domains that needed proxy: example.com, protected-site.com
 ```
 
-## Implementation Details
-
-**Middleware Logic (from source: `middlewares.py`):**
-
-<Steps>
-<Step title="First request to domain">
-Try direct connection (no proxy)
-</Step>
-
-<Step title="If response is 403/429">
-Mark domain as blocked, retry with proxy
-</Step>
-
-<Step title="Subsequent requests to blocked domain">
-Use proxy immediately (learned behavior)
-</Step>
-
-<Step title="Domain patterns remembered">
-Blocked domains tracked for spider lifetime
-</Step>
-</Steps>
-
-**Proxy URL Format:**
-```
-http://username:password@proxy.example.com:8080
-```
-
-**Implementation location:**
-- File: `middlewares.py:16-277`
-- Class: `SmartProxyMiddleware`
-- Priority: 350 (configured in `settings.py`)
-- Type: Scrapy downloader middleware
-
 ## Proxy Providers
 
-SmartProxyMiddleware works with any HTTP proxy provider:
-
-### Datacenter Proxies (Recommended)
-
-**Use whatever proxy service you prefer.**
-
-Popular options include Bright Data, Oxylabs, IPRoyal, Smartproxy, and others. SmartProxyMiddleware works with any HTTP proxy provider.
-
-### Residential Proxies
-
-For sites that block datacenter IPs:
-
-<Warning>
-Use with `--proxy-type residential` flag on crawl command. Same smart strategy (direct first, proxy only when blocked).
-
-Configure `RESIDENTIAL_PROXY_*` vars in `.env` with your provider's residential proxy credentials.
-</Warning>
+SmartProxyMiddleware works with any HTTP proxy provider. Popular options include Bright Data, Oxylabs, IPRoyal, Smartproxy, and others.
 
 ## Troubleshooting
 
@@ -300,15 +188,6 @@ If costs are still high:
 2. Verify those domains actually need proxies
 3. Consider if site has changed and unblocking is possible
 4. Some sites may require proxies for all requests - this is expected
-
-## When to Mention to Users
-
-Recommend proxy setup when:
-- User asks about proxies or rate limiting
-- Spider is getting blocked (403/429 errors in logs)
-- User needs to scrape at scale (1000s of pages)
-- User mentions proxy provider (Bright Data, Oxylabs, Smartproxy, etc.)
-- Crawls are failing with "Access Denied" or "Too Many Requests"
 
 ## Related Guides
 

@@ -8,12 +8,8 @@ Rules control which URLs are followed and how they are processed. Each rule defi
 ## SpiderRuleSchema
 
 <ParamField path="allow" type="string[]" default="null">
-  Regex patterns for URLs to allow
-  
-  **Validation:**
-  - Must be list of non-empty strings
-  - Patterns are Python regex
-  
+  Python regex patterns for URLs to allow (non-empty strings)
+
   **Example:**
   ```json
   "allow": ["/news/articles/.*", "/blog/.*"]
@@ -21,12 +17,8 @@ Rules control which URLs are followed and how they are processed. Each rule defi
 </ParamField>
 
 <ParamField path="deny" type="string[]" default="null">
-  Regex patterns for URLs to deny (takes precedence over allow)
-  
-  **Validation:**
-  - Must be list of non-empty strings
-  - Patterns are Python regex
-  
+  Python regex patterns for URLs to deny (takes precedence over allow)
+
   **Example:**
   ```json
   "deny": ["/news/articles/.*#comments", ".*\\?page=.*"]
@@ -52,34 +44,25 @@ Rules control which URLs are followed and how they are processed. Each rule defi
 </ParamField>
 
 <ParamField path="callback" type="string" default="null">
-  Callback function name for processing matched URLs
-  
-  **Validation:**
-  - Must be valid Python identifier (regex: `^[a-zA-Z_][a-zA-Z0-9_]*$`)
-  - Cannot be a reserved name
-  - Must be defined in `callbacks` object (or use built-in `parse_article`)
-  
+  Callback function name for processing matched URLs. Must be valid Python identifier and defined in `callbacks` object.
+
   **Built-in callbacks:**
   - `parse_article` - Extract article content using configured extractors
-  
-  **Reserved names (cannot use):**
+
+  **Reserved names:**
   - `parse_article`, `parse_start_url`, `start_requests`, `from_crawler`, `closed`, `parse`
-  
+
   **Example:**
   ```json
   "callback": "parse_product"
   ```
-  
+
   Use `null` for navigation-only rules (follow links but don't extract).
 </ParamField>
 
 <ParamField path="follow" type="boolean" default="true">
   Whether to follow links matching this rule
-  
-  **Common patterns:**
-  - `true` - Follow and extract (e.g., category pages)
-  - `false` - Extract only (e.g., article pages, product pages)
-  
+
   **Example:**
   ```json
   "follow": false
@@ -87,16 +70,8 @@ Rules control which URLs are followed and how they are processed. Each rule defi
 </ParamField>
 
 <ParamField path="priority" type="integer" default="0">
-  Rule priority (higher = processed first)
-  
-  **Validation:**
-  - Min: 0
-  - Max: 1000
-  
-  **Use cases:**
-  - Prioritize important pages
-  - Control crawl order
-  
+  Rule priority (higher = processed first). Range: 0-1000
+
   **Example:**
   ```json
   "priority": 10
@@ -139,11 +114,6 @@ Rules control which URLs are followed and how they are processed. Each rule defi
 }
 ```
 
-**Behavior:**
-- Article pages (`/news/articles/*`) → Extract content, don't follow links
-- Category pages (`/news/`, `/sport/`) → Follow links, don't extract
-- Comments sections → Ignored
-
 ### E-commerce
 
 ```json
@@ -164,10 +134,6 @@ Rules control which URLs are followed and how they are processed. Each rule defi
 }
 ```
 
-**Behavior:**
-- Product pages (`/product/xyz`) → Extract with custom callback, don't follow
-- Listing pages → Follow links to discover products
-
 ### Forum/Discussion
 
 ```json
@@ -183,10 +149,6 @@ Rules control which URLs are followed and how they are processed. Each rule defi
 }
 ```
 
-**Behavior:**
-- Discussion threads → Extract
-- Vote/reply/user pages → Ignored
-
 ### Restrict Link Sources
 
 ```json
@@ -200,10 +162,6 @@ Rules control which URLs are followed and how they are processed. Each rule defi
   ]
 }
 ```
-
-**Behavior:**
-- Only follow article links from main content and pagination
-- Ignore sidebar, footer, and navigation links
 
 ## Common Patterns
 
@@ -249,7 +207,7 @@ Rules control which URLs are followed and how they are processed. Each rule defi
 
 ## Rule Order
 
-Rules are processed in the order defined in the `rules` array. Use `priority` to control processing order within Scrapy.
+Rules are processed in array order. Use `priority` to control processing order within Scrapy.
 
 ## Validation Errors
 

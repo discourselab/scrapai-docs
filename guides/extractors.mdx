@@ -12,20 +12,12 @@ Test generic extractors (newspaper, trafilatura) first. Only use custom selector
 ```bash
 ./scrapai inspect https://example.com/article-url --project proj
 ```
-
-Fetches the page and saves HTML for analysis
 </Step>
 
 <Step title="Analyze HTML structure">
 ```bash
 ./scrapai analyze data/proj/spider/analysis/page.html
 ```
-
-Shows:
-- h1/h2 titles with classes
-- Content containers by size
-- Date elements
-- Author elements
 </Step>
 
 <Step title="Test selectors">
@@ -33,16 +25,12 @@ Shows:
 ./scrapai analyze data/proj/spider/analysis/page.html --test "h1.article-title"
 ./scrapai analyze data/proj/spider/analysis/page.html --test "div.article-body"
 ```
-
-Validate that selectors extract correct content
 </Step>
 
 <Step title="Search for specific fields">
 ```bash
 ./scrapai analyze data/proj/spider/analysis/page.html --find "price"
 ```
-
-Find elements containing specific text
 </Step>
 </Steps>
 
@@ -55,9 +43,6 @@ Find elements containing specific text
 | `["playwright", "custom"]` | JS-rendered content (SPAs, dynamic loading) |
 | `["playwright", "trafilatura"]` | JS-rendered, generic extractors work after rendering |
 
-<Tip>
-Extractors are tried in order. First successful extraction wins.
-</Tip>
 
 ## Generic Extractors
 
@@ -111,8 +96,6 @@ Generic extractors work for ~80% of news/blog sites. Try them first before creat
 </Note>
 
 ## Custom Selectors
-
-Use when generic extractors fail to extract content properly.
 
 **Standard fields** (title, author, content, date) → main DB columns.
 **Any other field** → stored in `metadata` JSON column.
@@ -172,8 +155,6 @@ Use when generic extractors fail to extract content properly.
 
 ## Playwright Extractor
 
-For JavaScript-rendered or dynamically loaded content.
-
 ### Basic Configuration
 
 ```json spider.json
@@ -192,8 +173,6 @@ For JavaScript-rendered or dynamically loaded content.
 
 ### Infinite Scroll
 
-For single-page sites with dynamic scroll loading:
-
 ```json spider.json
 {
   "settings": {
@@ -211,10 +190,6 @@ For single-page sites with dynamic scroll loading:
 - `INFINITE_SCROLL`: Enable scroll behavior (default: false)
 - `MAX_SCROLLS`: Max scrolls to perform (default: 5)
 - `SCROLL_DELAY`: Seconds between scrolls (default: 1.0)
-
-<Warning>
-Requires `playwright` in `EXTRACTOR_ORDER`. Set `follow: false` in rules to avoid following dynamically loaded links.
-</Warning>
 
 ### Complete Playwright Example
 
@@ -245,48 +220,22 @@ Requires `playwright` in `EXTRACTOR_ORDER`. Set `follow: false` in rules to avoi
 
 ## Selector Discovery Principles
 
-<Steps>
-<Step title="Target MAIN content element">
-Not navigation, sidebar, or footer
-</Step>
-
-<Step title="Selector should match ONE element">
-Verify uniqueness on multiple pages
-</Step>
-
-<Step title="Prefer specific classes">
-Use `.article-title` over generic `.title`
-</Step>
-
-<Step title="Test on multiple articles">
-Selector must work across different pages
-</Step>
-
-<Step title="Prefer semantic tags">
-Use `<article>`, `<time>`, `<h1>` when available
-</Step>
-
-<Step title="Validate content length">
-- Content selector should return >500 chars
-- Title should return >10 chars
-</Step>
-
-<Step title="Avoid dynamic class names">
-Skip randomly generated or versioned classes
-</Step>
-</Steps>
+- Target main content element (not navigation, sidebar, footer)
+- Selector should match ONE unique element
+- Prefer specific classes (`.article-title` over `.title`)
+- Test on multiple pages
+- Prefer semantic tags (`<article>`, `<time>`, `<h1>`)
+- Validate content length (>500 chars for content, >10 for title)
+- Avoid dynamic/generated class names
 
 <Warning>
 **Common mistakes:**
-- Selector matches multiple elements (gets first, often wrong)
-- Selector targets sidebar/footer instead of main content
+- Selector matches multiple elements
+- Targets sidebar/footer instead of main content
 - Overly generic selectors like `div.text`
-- Guessing without testing on actual HTML
 </Warning>
 
 ## Identifying JS-Rendered Sites
-
-Signs that `page.html` needs Playwright:
 
 <CodeGroup>
 ```html Empty Content
@@ -306,10 +255,6 @@ window.__INITIAL_STATE__ = {"articles": [...]};
 <div class="loading">Loading...</div>
 ```
 </CodeGroup>
-
-<Tip>
-If you see minimal/empty content or just `<div id="app"></div>`, use `["playwright", ...]` in `EXTRACTOR_ORDER`.
-</Tip>
 
 ## Playwright Wait: Common Selectors
 
@@ -370,118 +315,35 @@ Async browser rendering
 
 ### Generic Extractors Return Empty Content
 
-<Steps>
-<Step title="Check if JS-rendered">
-Inspect HTML for empty `<div id="app"></div>` or minimal content
-</Step>
-
-<Step title="Try Playwright extractor">
-```json
-{"EXTRACTOR_ORDER": ["playwright", "trafilatura"]}
-```
-</Step>
-
-<Step title="Use custom selectors">
-If generic extractors consistently fail:
-```json
-{"EXTRACTOR_ORDER": ["custom", "trafilatura"]}
-```
-</Step>
-</Steps>
+1. Check if JS-rendered (empty `<div id="app"></div>`)
+2. Try Playwright: `{"EXTRACTOR_ORDER": ["playwright", "trafilatura"]}`
+3. Use custom selectors: `{"EXTRACTOR_ORDER": ["custom", "trafilatura"]}`
 
 ### Custom Selector Returns None
 
-<Steps>
-<Step title="Test selector">
-```bash
-./scrapai analyze page.html --test "your-selector"
-```
-</Step>
-
-<Step title="Check selector specificity">
-Ensure selector matches the intended element uniquely
-</Step>
-
-<Step title="Verify HTML structure">
-Element might be in different location than expected
-</Step>
-</Steps>
+1. Test selector: `./scrapai analyze page.html --test "your-selector"`
+2. Check selector specificity and uniqueness
+3. Verify element exists in HTML structure
 
 ### Playwright Timeout
 
-<Steps>
-<Step title="Increase wait timeout">
-```json
-{"PLAYWRIGHT_DELAY": 10}
-```
-</Step>
-
-<Step title="Use different wait selector">
-Find selector that appears earlier:
-```json
-{"PLAYWRIGHT_WAIT_SELECTOR": ".loading-complete"}
-```
-</Step>
-
-<Step title="Check selector exists">
-Verify wait selector actually appears in rendered page
-</Step>
-</Steps>
+1. Increase delay: `{"PLAYWRIGHT_DELAY": 10}`
+2. Use different wait selector that appears earlier
+3. Verify selector exists in rendered page
 
 ### Content Extracted But Wrong
 
-<Steps>
-<Step title="Verify selector uniqueness">
-May be matching wrong element (sidebar, footer)
-</Step>
-
-<Step title="Make selector more specific">
-Add parent classes or IDs:
-```json
-{"content": "main article.post div.body"}
-```
-</Step>
-
-<Step title="Test on multiple pages">
-Ensure selector works across different articles
-</Step>
-</Steps>
+1. Verify selector uniqueness (may match sidebar/footer)
+2. Make selector more specific: `{"content": "main article.post div.body"}`
+3. Test on multiple pages
 
 ## Best Practices
 
-<Steps>
-<Step title="Start with generic extractors">
-80% success rate for news/blog sites
-```json
-{"EXTRACTOR_ORDER": ["newspaper", "trafilatura"]}
-```
-</Step>
-
-<Step title="Add custom selectors if needed">
-When generic extractors fail:
-```json
-{"EXTRACTOR_ORDER": ["custom", "trafilatura"]}
-```
-</Step>
-
-<Step title="Use Playwright for JS sites">
-Only when content is dynamically rendered:
-```json
-{"EXTRACTOR_ORDER": ["playwright", "trafilatura"]}
-```
-</Step>
-
-<Step title="Test on multiple pages">
-Verify extraction works across different articles
-</Step>
-
-<Step title="Monitor extraction quality">
-Check scraped content with `show` command:
-```bash
-./scrapai show 1 --project proj
-```
-</Step>
-</Steps>
+1. Start with generic extractors: `["newspaper", "trafilatura"]` (80% success rate)
+2. Add custom selectors if needed: `["custom", "trafilatura"]`
+3. Use Playwright for JS-rendered sites: `["playwright", "trafilatura"]`
+4. Test on multiple pages
+5. Monitor quality: `./scrapai show 1 --project proj`
 
 ## Related Guides
 

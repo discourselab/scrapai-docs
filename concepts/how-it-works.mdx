@@ -73,14 +73,10 @@ The key insight: **the agent writes config, not code**.
 ```bash Execution Phase (Forever)
 # Run the spider as many times as you want - no AI costs
 ./scrapai crawl bbc_co_uk --project news
-./scrapai crawl bbc_co_uk --project news
-./scrapai crawl bbc_co_uk --project news
-# ... months later ...
-./scrapai crawl bbc_co_uk --project news
 ```
 </CodeGroup>
 
-Every execution after the first is pure Scrapy: fast, deterministic, and free.
+Every execution is pure Scrapy: fast, deterministic, and free.
 
 ## Why JSON Configs Instead of AI-Generated Python?
 
@@ -113,8 +109,8 @@ By constraining the agent to write JSON configs:
     JSON configs are portable data structures. Export a spider config, import it into another project, share it with your team, or version control it like any other data file.
   </Accordion>
   
-  <Accordion title="Maintainability: No Code Drift">
-    When 5 developers write 100 spiders, you get 5 different styles. ScrapAI produces uniform configs with the same schema, validation, and structure.
+  <Accordion title="Maintainability: Uniform Configs">
+    All configs follow the same schema, validation, and structure.
   </Accordion>
 </AccordionGroup>
 
@@ -152,17 +148,6 @@ Here's what an AI-generated spider config looks like for BBC News:
   This config defines URL patterns to match, extraction strategies to use, and Scrapy settings. The `DatabaseSpider` loads it at runtime and executes the crawl.
 </Info>
 
-### What the Agent Figured Out
-
-From a single instruction (`"Add https://bbc.co.uk to my news project"`), the agent:
-
-1. **Discovered URL patterns**: `/news/articles/.*` for news, `/sport/.*/articles/.*` for sports
-2. **Chose extractors**: newspaper4k and trafilatura work well for BBC's article structure
-3. **Set rate limits**: 1-second delay between requests to be respectful
-4. **Filtered noise**: Deny comments sections with `#comments`
-
-No CSS selectors to write, no HTML inspection, no trial and error.
-
 ## The Cost Equation
 
 <Card title="Traditional AI Scraping" icon="calculator">
@@ -183,43 +168,7 @@ For 100 websites scraped weekly:
 
 ## When the Site Changes
 
-Websites redesign. Layouts change. Scrapers break.
-
-With ScrapAI:
-
-```bash Fixing a Broken Spider
-# Detect the breakage (via test crawl)
-./scrapai crawl bbc_co_uk --project news --limit 5
-# Output shows missing fields
-
-# Point the agent at the broken spider
-"Fix the bbc_co_uk spider - the site redesigned"
-
-# Agent re-analyzes, updates the config, verifies the fix
-# New config imported to database, spider ready to run
-```
-
-The re-analysis is another AI call (a few cents), then you're back to deterministic execution.
-
-## Key Takeaways
-
-<CardGroup cols={2}>
-  <Card title="One-Time Cost" icon="chart-line">
-    AI inference happens once during spider creation. Every subsequent crawl is pure Scrapy—fast and free.
-  </Card>
-  
-  <Card title="No Code Generation" icon="shield-check">
-    The agent writes validated JSON configs, not executable Python. Safer, more portable, easier to maintain.
-  </Card>
-  
-  <Card title="Database-First" icon="database">
-    Spiders are database rows, not files. Change settings across 100 spiders with one SQL query.
-  </Card>
-  
-  <Card title="Production Ready" icon="rocket">
-    Every generated spider comes with a test config (5 sample URLs). Run test crawls to verify before production.
-  </Card>
-</CardGroup>
+When a site redesigns, use [AI-assisted maintenance](/guides/ai-assisted-maintenance) to detect and fix broken spiders. The agent re-analyzes and updates the config—another AI call (a few cents), then back to deterministic execution.
 
 ## Next Steps
 

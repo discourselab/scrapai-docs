@@ -47,10 +47,6 @@ No projects found.
 
 Projects are **implicit** - they don't need to be created explicitly. When you import a spider or add a queue item with `--project <name>`, the project is automatically associated.
 
-### Creating Projects
-
-Projects are created by using them:
-
 ```bash
 # Import spider creates project "news"
 ./scrapai spiders import bbc_spider.json --project news
@@ -59,15 +55,7 @@ Projects are created by using them:
 ./scrapai queue add https://example.com --project research
 ```
 
-### Default Project
-
-If `--project` is not specified, most commands use `default`:
-
-```bash
-# These are equivalent:
-./scrapai spiders list
-./scrapai spiders list --project default
-```
+If `--project` is not specified, commands use `default`.
 
 <Tip>
 Always use explicit `--project` names for clarity. Avoid relying on the default.
@@ -80,26 +68,6 @@ Project names should be:
 - Lowercase: `news` not `News`
 - No spaces: `tech_blogs` not `tech blogs`
 - Consistent: Choose a naming scheme and stick to it
-
-### Good Examples
-
-```
-news
-ecommerce
-research_papers
-tech_blogs
-corporate_sites
-government_data
-```
-
-### Bad Examples
-
-```
-Project 1              # Not descriptive
-My News Project        # Spaces and mixed case
-project_123            # Not meaningful
-test                   # Too generic
-```
 
 ## Use Cases
 
@@ -325,68 +293,14 @@ GROUP BY project_name, status
 
 ## Best Practices
 
-### 1. Use Descriptive Names
-
-```bash
-# Good
-./scrapai spiders import spider.json --project tech_news_monitoring
-
-# Bad
-./scrapai spiders import spider.json --project proj1
-```
-
-### 2. Separate Dev and Prod
-
-```bash
-# Development
-./scrapai spiders import spider.json --project dev_news
-./scrapai crawl spider --project dev_news --limit 10
-
-# Production
-./scrapai spiders import spider.json --project prod_news
-./scrapai crawl spider --project prod_news
-```
-
-### 3. Document Project Purpose
-
-Maintain a `projects.md` file:
-
-```markdown
-# ScrapAI Projects
-
-## news
-News aggregation from major outlets (BBC, CNN, Reuters)
-
-## ecommerce
-Price monitoring for competitive analysis
-
-## research
-Academic paper scraping for literature review
-```
-
-### 4. Consistent Naming
-
-Choose a naming convention:
-
-```bash
-# Option 1: Simple names
-news, ecommerce, research
-
-# Option 2: Prefixed names
-client_acme, client_beta, internal_research
-
-# Option 3: Dated names
-news_2026, ecommerce_q1, research_feb
-```
+- **Use descriptive names**: `tech_news_monitoring` not `proj1`
+- **Separate dev and prod**: Use `dev_` and `prod_` prefixes
+- **Document project purpose**: Maintain a `projects.md` file describing each project
+- **Consistent naming**: Choose a convention (simple names, prefixed names, or dated names) and stick to it
 
 ## Migrating Between Projects
 
-Move spiders between projects:
-
 ```bash
-# Export spider config
-./scrapai db query "SELECT name FROM spiders WHERE project='old_project'" --format json > spiders.json
-
 # Update project in database
 ./scrapai db query "UPDATE spiders SET project='new_project' WHERE project='old_project'" --yes
 

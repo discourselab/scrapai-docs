@@ -127,10 +127,6 @@ Generic extractors (newspaper/trafilatura) recommended - site uses clean semanti
 **Status:** ✅ Ready for Phase 2
 ```
 
-<Note>
-Full analysis includes URL matching rules, exclusion patterns, and volume estimates. This is an abbreviated version showing key findings.
-</Note>
-
 </Tab>
 
 <Tab title="Test Config">
@@ -162,10 +158,6 @@ Full analysis includes URL matching rules, exclusion patterns, and volume estima
   }
 }
 ```
-
-<Tip>
-**Test config** uses 5 specific URLs (one from each content section) and a catch-all rule. This validates extraction works before deploying production.
-</Tip>
 
 </Tab>
 
@@ -215,12 +207,6 @@ Full analysis includes URL matching rules, exclusion patterns, and volume estima
   }
 }
 ```
-
-**Key Differences from Test Config:**
-- Starts from homepage instead of specific URLs
-- 6 specific rules for different content sections
-- Deny patterns to exclude comment sections
-- Ready for production crawling
 
 </Tab>
 </Tabs>
@@ -360,10 +346,6 @@ Generic extractors (newspaper/trafilatura) work with semantic HTML
 }
 ```
 
-<Note>
-**Cloudflare settings** enable hybrid mode: browser verifies once, then uses cached cookies for fast HTTP requests (20-100x faster than browser-only).
-</Note>
-
 </Tab>
 
 <Tab title="Production Config">
@@ -437,12 +419,6 @@ Generic extractors (newspaper/trafilatura) work with semantic HTML
   }
 }
 ```
-
-**Key Features:**
-- 10 rules for 10 content sections
-- Deny patterns exclude listing pages and pagination
-- Cloudflare hybrid mode for speed
-- Cookie refresh every 10 minutes
 
 </Tab>
 </Tabs>
@@ -606,10 +582,6 @@ field-level extraction.
 }
 ```
 
-<Tip>
-**Custom callbacks** define field-level extraction. No generic extractors for e-commerce sites.
-</Tip>
-
 </Tab>
 
 <Tab title="Production Config">
@@ -679,12 +651,6 @@ field-level extraction.
   }
 }
 ```
-
-**Key Features:**
-- Regex pattern `/dp/[A-Z0-9]{10}` matches ASIN format
-- Extensive deny patterns for non-product pages
-- Lower concurrency (4) and higher delay (2s) for politeness
-- Realistic USER_AGENT required
 
 </Tab>
 </Tabs>
@@ -859,10 +825,6 @@ nested list extraction.
 }
 ```
 
-<Note>
-**Nested lists** extract hierarchical comment threads. Each comment includes indent level for threading structure.
-</Note>
-
 </Tab>
 
 <Tab title="Production Config">
@@ -928,28 +890,11 @@ nested list extraction.
 }
 ```
 
-**Key Features:**
-- XPath for story author (complex DOM relationship)
-- Nested list captures comment hierarchy
-- Indent level preserved for threading
-- Very polite settings (CONCURRENT_REQUESTS=2, DOWNLOAD_DELAY=2)
-- Deny patterns for actions/profiles
-
 </Tab>
 </Tabs>
 
 </Tab>
 </Tabs>
-
-## What This Shows
-
-Across all examples, notice how the agent:
-
-1. **Analyzes thoroughly** - Documents URL patterns, content sections, HTML structure
-2. **Tests first** - Creates test config with sample URLs before production
-3. **Adapts strategy** - Uses generic extractors for articles, custom callbacks for products/forums
-4. **Handles edge cases** - Deny patterns, pagination, comment sections, utility pages
-5. **Respects sites** - Appropriate DOWNLOAD_DELAY, CONCURRENT_REQUESTS, ROBOTSTXT_OBEY
 
 ## Related Documentation
 

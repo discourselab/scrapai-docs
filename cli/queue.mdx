@@ -61,16 +61,7 @@ $ ./scrapai queue add https://bbc.co.uk --project news --priority 8
 
 ### Duplicate Handling
 
-```bash
-$ ./scrapai queue add https://bbc.co.uk --project news
-⚠️  URL already exists in queue
-   ⏳ ID: 42
-   Status: pending
-   URL: https://bbc.co.uk
-   Skipping duplicate...
-```
-
-Duplicates are detected by `(project_name, website_url)` combination.
+Duplicates are detected by `(project_name, website_url)` combination and automatically skipped.
 
 ## queue bulk
 
@@ -223,13 +214,6 @@ $ ./scrapai queue list --project news
    Status: pending | Priority: 7
 ```
 
-### Status Icons
-
-- ⏳ **Pending**: Waiting to be processed
-- 🔄 **Processing**: Currently being worked on
-- ✅ **Completed**: Successfully processed
-- ❌ **Failed**: Processing failed
-
 ## queue next
 
 Atomically claim the next pending item.
@@ -248,13 +232,7 @@ Atomically claim the next pending item.
 
 ### Behavior
 
-1. Finds highest priority pending item
-2. Atomically updates status to `processing`
-3. Sets `processing_by` to `username@hostname`
-4. Sets `locked_at` to current timestamp
-
-**PostgreSQL**: Uses `FOR UPDATE SKIP LOCKED` (race-safe)
-**SQLite**: Uses conditional UPDATE (race-prone under high concurrency)
+Atomically claims the highest priority pending item and locks it for processing. PostgreSQL uses `FOR UPDATE SKIP LOCKED` (race-safe). SQLite uses conditional UPDATE.
 
 ### Example
 
@@ -279,25 +257,6 @@ Atomically claim the next pending item.
 
 ```bash
 📬 No pending items in queue for project 'news'
-```
-
-### Use in Agents
-
-Typical agent workflow:
-
-```bash
-# Claim next item
-./scrapai queue next --project news
-# ID: 42, URL: https://bbc.co.uk
-
-# Process the website
-# (AI agent analyzes site, generates spider, tests, imports)
-
-# Mark as completed
-./scrapai queue complete 42
-
-# Or mark as failed
-./scrapai queue fail 42 --message "Site requires authentication"
 ```
 
 ## queue complete
@@ -487,30 +446,7 @@ Remove 47 items? (y/N): y
 ✅ Removed 47 items from queue
 ```
 
-## Database Schema
-
-### `crawl_queue` Table
-
-```sql
-CREATE TABLE crawl_queue (
-    id INTEGER PRIMARY KEY,
-    project_name VARCHAR(255) NOT NULL,
-    website_url VARCHAR(2048) NOT NULL,
-    custom_instruction TEXT,
-    status VARCHAR(50) NOT NULL DEFAULT 'pending',
-    priority INTEGER NOT NULL DEFAULT 5,
-    processing_by VARCHAR(255),
-    locked_at TIMESTAMP,
-    error_message TEXT,
-    retry_count INTEGER NOT NULL DEFAULT 0,
-    created_at TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP NOT NULL,
-    completed_at TIMESTAMP,
-    UNIQUE(project_name, website_url)
-);
-```
-
-### Status Values
+## Status Values
 
 - `pending`: Waiting to be processed
 - `processing`: Currently being worked on (locked)
@@ -519,39 +455,17 @@ CREATE TABLE crawl_queue (
 
 ## Parallel Processing
 
-### Manual Loop
+Process queue items with multiple workers:
 
 ```bash
 while true; do
   ./scrapai queue next --project news | grep "ID:" || break
-  # Process the URL
-  # Mark complete/failed
-done
-```
-
-### Parallel Workers
-
-Run multiple workers in parallel:
-
-```bash
-# Terminal 1
-while true; do
-  ./scrapai queue next --project news && # process
-done
-
-# Terminal 2
-while true; do
-  ./scrapai queue next --project news && # process
-done
-
-# Terminal 3
-while true; do
-  ./scrapai queue next --project news && # process
+  # Process the URL and mark complete/failed
 done
 ```
 
 <Warning>
-**PostgreSQL recommended** for parallel processing. SQLite lacks `FOR UPDATE SKIP LOCKED` and may have race conditions under high concurrency.
+Use PostgreSQL for parallel processing. SQLite may have race conditions under high concurrency.
 </Warning>
 
 ## Next Steps

@@ -5,98 +5,48 @@ description: Configure SQLite or PostgreSQL database for ScrapAI CLI
 
 ## Overview
 
-ScrapAI CLI stores all crawl metadata, spider configurations, and queue information in a relational database. You can use SQLite for development or PostgreSQL for production.
+ScrapAI stores crawl metadata, spider configurations, and queue data in a relational database.
 
 ## Database Options
 
 ### SQLite (Default)
 
-<Note>
-**Recommended for:**
-- Getting started
-- Development
-- Small to medium projects (< 1M items)
-- Single-user usage
-</Note>
+**Best for:** Development, small to medium projects (< 1M items), single-user usage.
 
-**Advantages:**
-- No setup required
-- Zero configuration
-- Fast for small datasets
-- File-based (easy backup)
-- Built into Python
+**Pros:** No setup, zero configuration, file-based, built into Python.
 
-**Limitations:**
-- Limited concurrency
-- Single writer at a time
-- Performance degrades with large datasets
-- Not suitable for distributed systems
+**Cons:** Limited concurrency, single writer, not suitable for distributed systems.
 
 ### PostgreSQL
 
-<Note>
-**Recommended for:**
-- Production deployments
-- Large projects (1M+ items)
-- Multi-user environments
-- Distributed crawling
-- High concurrency needs
-</Note>
+**Best for:** Production, large projects (1M+ items), multi-user environments, distributed crawling.
 
-**Advantages:**
-- Excellent concurrency
-- Scales to billions of rows
-- Advanced indexing
-- ACID compliance
-- Industry standard
+**Pros:** Excellent concurrency, scales to billions of rows, advanced indexing.
 
-**Requirements:**
-- PostgreSQL 12+ installed
-- Database server running
-- User credentials
+**Requires:** PostgreSQL 12+ installed and running.
 
 ## SQLite Configuration
 
 ### Default Setup
 
-SQLite is configured by default. No action required:
+SQLite is configured by default. Run `./scrapai setup` to create `scrapai.db` in the project root.
+
+### Custom Path
+
+Update `.env` to use a different location:
 
 ```bash
-./scrapai setup
-```
-
-This creates `scrapai.db` in the project root.
-
-### Custom SQLite Path
-
-To use a different database file, update `.env`:
-
-```bash
-# Relative path
-DATABASE_URL=sqlite:///scrapai.db
-
-# Absolute path
-DATABASE_URL=sqlite:////absolute/path/to/scrapai.db
-
-# Custom location
-DATABASE_URL=sqlite:///./data/scrapai.db
+DATABASE_URL=sqlite:///scrapai.db                    # Relative
+DATABASE_URL=sqlite:////absolute/path/to/scrapai.db  # Absolute
 ```
 
 <Tip>
 Use three slashes `///` for relative paths and four slashes `////` for absolute paths.
 </Tip>
 
-### SQLite Optimization
+### Optimization
 
-ScrapAI automatically configures SQLite with optimized settings:
-
-```python
-PRAGMA journal_mode=WAL      # Write-Ahead Logging (better concurrency)
-PRAGMA synchronous=NORMAL    # Balance safety and performance
-PRAGMA cache_size=-64000     # 64MB cache
-```
-
-These settings are applied automatically in `core/db.py:17`.
+ScrapAI automatically applies optimized SQLite settings (WAL mode, 64MB cache) in `core/db.py`.
 
 ## PostgreSQL Configuration
 
@@ -141,13 +91,10 @@ These settings are applied automatically in `core/db.py:17`.
 ### Create Database
 
 ```bash
-# Create database
-creatdb scrapai
-
-# Or with custom user
-psql -U postgres
+createdb scrapai
 ```
 
+Or with custom user:
 ```sql
 CREATE DATABASE scrapai;
 CREATE USER scrapai_user WITH PASSWORD 'secure_password';
@@ -156,102 +103,43 @@ GRANT ALL PRIVILEGES ON DATABASE scrapai TO scrapai_user;
 
 ### Configure Connection
 
-Update `.env` with PostgreSQL connection string:
+Update `.env` with your connection string:
 
 ```bash
 DATABASE_URL=postgresql://user:password@localhost:5432/scrapai
 ```
 
-**Connection String Format:**
-```
-postgresql://[user]:[password]@[host]:[port]/[database]
-```
+Format: `postgresql://[user]:[password]@[host]:[port]/[database]`
 
-**Examples:**
-
-```bash
-# Local PostgreSQL
-DATABASE_URL=postgresql://scrapai_user:secure_password@localhost:5432/scrapai
-
-# Remote PostgreSQL
-DATABASE_URL=postgresql://user:pass@db.example.com:5432/scrapai
-
-# PostgreSQL with SSL
-DATABASE_URL=postgresql://user:pass@db.example.com:5432/scrapai?sslmode=require
-
-# Cloud providers (RDS, Cloud SQL, etc.)
-DATABASE_URL=postgresql://admin:pass@rds-instance.region.rds.amazonaws.com:5432/scrapai
-```
+Add `?sslmode=require` for SSL connections.
 
 ### Run Migrations
 
-After configuring PostgreSQL, initialize the database schema:
+Initialize the database schema:
 
 ```bash
 ./scrapai db migrate
 ```
 
-This creates all required tables and indexes.
-
 ## Migrating from SQLite to PostgreSQL
 
 <Warning>
-**Backup your data before migrating!**
-
-Create a backup of your SQLite database:
-```bash
-cp scrapai.db scrapai.db.backup
-```
+Backup your data first: `cp scrapai.db scrapai.db.backup`
 </Warning>
 
-### Migration Steps
+### Steps
 
-1. **Install and configure PostgreSQL** (see above)
-
-2. **Update `.env` with PostgreSQL URL:**
-   ```bash
-   # Before
-   DATABASE_URL=sqlite:///scrapai.db
-   
-   # After
-   DATABASE_URL=postgresql://user:password@localhost:5432/scrapai
-   ```
-
-3. **Run migrations to create schema:**
-   ```bash
-   ./scrapai db migrate
-   ```
-
-4. **Transfer data from SQLite:**
-   ```bash
-   ./scrapai db transfer sqlite:///scrapai.db
-   ```
-
-5. **Verify transfer:**
-   ```bash
-   ./scrapai verify
-   ```
+1. Install and configure PostgreSQL
+2. Update `.env` with PostgreSQL URL
+3. Run migrations: `./scrapai db migrate`
+4. Transfer data: `./scrapai db transfer sqlite:///scrapai.db`
+5. Verify: `./scrapai verify`
 
 <Tip>
-**Large databases:** Skip scraped items to speed up transfer:
-```bash
-./scrapai db transfer sqlite:///scrapai.db --skip-items
-```
-
-This transfers spider configs and metadata but not crawled data.
+For large databases, use `--skip-items` to transfer only configs and metadata.
 </Tip>
 
-### Transfer Process
-
-The `db transfer` command:
-1. Reads from source database (first argument)
-2. Writes to target database (current `DATABASE_URL` in `.env`)
-3. Transfers all tables and data
-4. Preserves relationships and indexes
-
-<Note>
-**Important:** Update `DATABASE_URL` in `.env` BEFORE running transfer. The command reads from the source URL you provide and writes to whatever `DATABASE_URL` is currently set.
-</Note>
+The transfer command reads from the source URL (argument) and writes to the current `DATABASE_URL` in `.env`.
 
 ## Database Maintenance
 
@@ -260,30 +148,15 @@ The `db transfer` command:
 <Tabs>
   <Tab title="SQLite">
     ```bash
-    # Simple file copy
     cp scrapai.db scrapai.db.backup
-    
-    # With timestamp
     cp scrapai.db scrapai.db.$(date +%Y%m%d_%H%M%S)
-    
-    # SQLite backup command
-    sqlite3 scrapai.db ".backup scrapai.db.backup"
     ```
   </Tab>
-  
+
   <Tab title="PostgreSQL">
     ```bash
-    # Dump database
     pg_dump scrapai > scrapai_backup.sql
-    
-    # With timestamp
-    pg_dump scrapai > scrapai_$(date +%Y%m%d_%H%M%S).sql
-    
-    # Compressed backup
     pg_dump scrapai | gzip > scrapai_backup.sql.gz
-    
-    # Custom format (faster restore)
-    pg_dump -Fc scrapai > scrapai_backup.dump
     ```
   </Tab>
 </Tabs>
@@ -293,54 +166,28 @@ The `db transfer` command:
 <Tabs>
   <Tab title="SQLite">
     ```bash
-    # Stop ScrapAI
-    # Replace database file
     cp scrapai.db.backup scrapai.db
-    
-    # Or restore from backup
-    sqlite3 scrapai.db ".restore scrapai.db.backup"
     ```
   </Tab>
-  
+
   <Tab title="PostgreSQL">
     ```bash
-    # From SQL dump
     psql scrapai < scrapai_backup.sql
-    
-    # From compressed backup
-    gunzip -c scrapai_backup.sql.gz | psql scrapai
-    
-    # From custom format
-    pg_restore -d scrapai scrapai_backup.dump
     ```
   </Tab>
 </Tabs>
 
-### Vacuum and Optimize
+### Optimize
 
 <Tabs>
   <Tab title="SQLite">
     ```bash
-    # Optimize database
-    sqlite3 scrapai.db "VACUUM;"
-    
-    # Analyze for query optimization
-    sqlite3 scrapai.db "ANALYZE;"
+    sqlite3 scrapai.db "VACUUM; ANALYZE;"
     ```
   </Tab>
-  
+
   <Tab title="PostgreSQL">
     ```bash
-    # Vacuum (reclaim space)
-    psql scrapai -c "VACUUM;"
-    
-    # Full vacuum (locks tables)
-    psql scrapai -c "VACUUM FULL;"
-    
-    # Analyze for query optimization
-    psql scrapai -c "ANALYZE;"
-    
-    # Combined
     psql scrapai -c "VACUUM ANALYZE;"
     ```
   </Tab>
@@ -348,177 +195,77 @@ The `db transfer` command:
 
 ## Database Schema
 
-ScrapAI uses SQLAlchemy ORM with Alembic migrations. Schema is defined in:
-- `core/models.py` - Table definitions
-- `alembic/versions/` - Migration scripts
+ScrapAI uses SQLAlchemy ORM with Alembic migrations. Schema defined in `core/models.py`.
 
-### Key Tables
+**Key Tables:** spiders, projects, crawls, items, queue, analysis
 
-- **spiders** - Spider configurations and rules
-- **projects** - Project metadata
-- **crawls** - Crawl execution history
-- **items** - Scraped articles/items
-- **queue** - Crawl queue for batch processing
-- **analysis** - Analysis results and patterns
-
-### Viewing Schema
+### View Schema
 
 <Tabs>
   <Tab title="SQLite">
     ```bash
-    # List tables
-    sqlite3 scrapai.db ".tables"
-    
-    # Show schema
     sqlite3 scrapai.db ".schema"
-    
-    # Describe table
-    sqlite3 scrapai.db ".schema spiders"
     ```
   </Tab>
-  
+
   <Tab title="PostgreSQL">
     ```bash
-    # List tables
     psql scrapai -c "\dt"
-    
-    # Describe table
-    psql scrapai -c "\d spiders"
-    
-    # Full schema
-    pg_dump scrapai --schema-only
     ```
   </Tab>
 </Tabs>
 
 ## Performance Tuning
 
-### SQLite Tuning
+### SQLite
 
-ScrapAI automatically applies optimal SQLite settings, but for extreme performance:
+ScrapAI automatically applies optimal settings. For extreme performance, increase cache size in `core/db.py`.
 
-```bash
-# In core/db.py, increase cache size:
-PRAGMA cache_size=-128000    # 128MB cache (default: 64MB)
-```
+### PostgreSQL
 
-### PostgreSQL Tuning
-
-Edit PostgreSQL configuration (`postgresql.conf`):
+Edit `postgresql.conf` to tune memory settings:
 
 ```ini
-# Memory settings (adjust based on available RAM)
 shared_buffers = 256MB          # 25% of RAM
 effective_cache_size = 1GB      # 50-75% of RAM
-work_mem = 16MB                 # Per-operation memory
-maintenance_work_mem = 128MB    # For VACUUM, CREATE INDEX
-
-# Connection settings
-max_connections = 100
-
-# Query planning
-random_page_cost = 1.1          # For SSD storage
+work_mem = 16MB
+random_page_cost = 1.1          # For SSD
 ```
 
-Restart PostgreSQL after changes:
-```bash
-sudo systemctl restart postgresql
-```
+Restart: `sudo systemctl restart postgresql`
 
 ## Troubleshooting
 
-### Database connection failed
+### Connection Failed
 
-**SQLite:**
-```bash
-# Check file exists
-ls -la scrapai.db
+**SQLite:** Check file exists and permissions. Recreate with `rm scrapai.db* && ./scrapai setup`.
 
-# Check permissions
-chmod 644 scrapai.db
+**PostgreSQL:** Test connection with `psql -U user -d scrapai`. Check service status and verify `DATABASE_URL`.
 
-# Recreate database
-rm scrapai.db scrapai.db-*
-./scrapai setup
-```
-
-**PostgreSQL:**
-```bash
-# Test connection
-psql -U user -d scrapai
-
-# Check service status
-sudo systemctl status postgresql
-
-# Verify connection string
-echo $DATABASE_URL
-```
-
-### Database locked (SQLite)
+### Database Locked (SQLite)
 
 ```bash
-# Find processes using database
-lsof scrapai.db
-
-# Kill stuck processes
-pkill -f scrapai
-
-# Clear WAL files
-rm scrapai.db-wal scrapai.db-shm
+lsof scrapai.db           # Find processes
+pkill -f scrapai          # Kill stuck processes
+rm scrapai.db-wal *.db-shm  # Clear WAL files
 ```
 
-### Migration failed
+### Migration Failed
 
-```bash
-# Check current version
-./scrapai db version
+Check version with `./scrapai db version`. Reset with `rm scrapai.db && ./scrapai setup` or run `alembic upgrade head`.
 
-# Reset migrations (WARNING: loses data)
-rm scrapai.db
-./scrapai setup
+### Transfer Failed
 
-# Or fix manually
-alembic upgrade head
-```
-
-### Transfer failed
-
-```bash
-# Check source database is readable
-sqlite3 scrapai.db "SELECT COUNT(*) FROM spiders;"
-
-# Verify target PostgreSQL is accessible
-psql $DATABASE_URL -c "SELECT 1;"
-
-# Try without items
-./scrapai db transfer sqlite:///scrapai.db --skip-items
-```
+Verify source is readable and target is accessible. Try with `--skip-items`.
 
 ## Security
 
 ### PostgreSQL Security
 
-1. **Use strong passwords:**
-   ```sql
-   ALTER USER scrapai_user WITH PASSWORD 'very_secure_random_password';
-   ```
-
-2. **Restrict network access** (`pg_hba.conf`):
-   ```
-   # Local connections only
-   host    scrapai    scrapai_user    127.0.0.1/32    md5
-   ```
-
-3. **Enable SSL:**
-   ```bash
-   DATABASE_URL=postgresql://user:pass@host:5432/scrapai?sslmode=require
-   ```
-
-4. **Regular backups:**
-   ```bash
-   # Automated daily backups
-   0 2 * * * pg_dump scrapai | gzip > /backups/scrapai_$(date +\%Y\%m\%d).sql.gz
-   ```
+1. Use strong passwords
+2. Restrict network access in `pg_hba.conf`
+3. Enable SSL: Add `?sslmode=require` to `DATABASE_URL`
+4. Set up automated backups
 
 ## Related Documentation
 

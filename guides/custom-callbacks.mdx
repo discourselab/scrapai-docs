@@ -9,7 +9,6 @@ Extract custom fields from any structured data - not just articles. Perfect for 
 
 <Tabs>
 <Tab title="Use Callbacks For">
-**Custom callbacks are ideal for:**
 - E-commerce (products, prices, ratings)
 - Job boards (titles, companies, salaries)
 - Real estate (properties, prices, features)
@@ -18,7 +17,6 @@ Extract custom fields from any structured data - not just articles. Perfect for 
 </Tab>
 
 <Tab title="Use parse_article For">
-**Default parse_article works for:**
 - News sites, blogs, documentation
 - Content with title/content/author/date structure
 - Standard article formats
@@ -102,7 +100,7 @@ Max nesting depth: 3 levels
 
 ## Field Processors
 
-8 powerful processors available for data transformation:
+8 processors available for data transformation:
 
 <CardGroup cols={2}>
 <Card title="strip" icon="scissors">
@@ -132,7 +130,7 @@ Parse dates (stores as ISO strings)
 </CardGroup>
 
 <Tip>
-See [Data Processors](/guides/data-processors) for complete reference with examples.
+See [Data Processors](/guides/data-processors) for complete reference.
 </Tip>
 
 ### Chaining Processors
@@ -173,10 +171,6 @@ Job listings with companies, salaries
 Property listings with prices, features
 </Card>
 </CardGroup>
-
-<Tip>
-Use templates as starting points - adjust selectors to match your target site.
-</Tip>
 
 ## Common Patterns
 
@@ -241,7 +235,6 @@ Use templates as starting points - adjust selectors to match your target site.
 ```bash
 ./scrapai analyze page.html
 ```
-Discover page structure and identify fields
 </Step>
 
 <Step title="Test selectors">
@@ -249,7 +242,6 @@ Discover page structure and identify fields
 ./scrapai analyze page.html --test "h1::text"
 ./scrapai analyze page.html --test "span.price::text"
 ```
-Verify selectors extract correct data
 </Step>
 
 <Step title="Build callback config">
@@ -264,7 +256,6 @@ Verify selectors work across different pages
 ```bash
 ./scrapai crawl spider --limit 5 --project proj
 ```
-Run test crawl to validate extraction
 </Step>
 </Steps>
 
@@ -402,10 +393,6 @@ Never use these reserved callback names:
 </Step>
 
 <Step title="Check if page needs browser rendering">
-```bash
-./scrapai inspect https://example.com --project proj --browser
-```
-or
 ```bash
 ./scrapai inspect https://example.com --project proj --browser
 ```

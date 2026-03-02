@@ -3,7 +3,7 @@ title: "Spider Management"
 description: "Import, list, and delete spider configurations"
 ---
 
-Spider management commands handle JSON configurations stored in the database. Spiders are imported from JSON files and can be updated by re-importing.
+Spider management commands handle JSON configurations stored in the database.
 
 ## spiders list
 
@@ -43,15 +43,6 @@ $ ./scrapai spiders list --project news
   • reuters_com [news] (Active: True) - Created: 2026-02-26 16:20, Updated: 2026-02-28 11:30
     Source: https://reuters.com
 ```
-
-### Fields Displayed
-
-- **Name**: Spider identifier (used in `crawl` and `show` commands)
-- **Project**: Project tag in brackets
-- **Active**: Whether spider is enabled (currently always `True`)
-- **Created**: Initial import timestamp
-- **Updated**: Last modification timestamp
-- **Source**: Original website URL (if specified in config)
 
 ## spiders import
 
@@ -160,16 +151,6 @@ cat spider.json | ./scrapai spiders import - --project news
   Custom extraction callbacks with CSS/XPath selectors for non-article content.
 </ParamField>
 
-### Validation
-
-All spider configs are validated through Pydantic schemas before import:
-
-- **Spider names**: `^[a-zA-Z0-9_-]+$` pattern
-- **URLs**: HTTP/HTTPS only, no private IPs (127.0.0.1, 10.x, 172.16.x, 192.168.x), max 2048 chars
-- **Callback names**: Whitelisted names only, reserved names blocked
-- **Settings**: Bounded values (concurrency 1-32, delays 0-60s)
-- **Extractor order**: Valid extractor names only
-
 ### Output
 
 #### Successful Import
@@ -267,67 +248,8 @@ $ ./scrapai spiders delete bbc_co_uk --project news --force
 ```
 
 <Warning>
-Deleting a spider removes:
-- Spider configuration
-- All URL matching rules
-- All custom settings
-- **All scraped items** associated with this spider
-
-This operation cannot be undone.
+Deleting a spider removes all configuration, rules, settings, and **all scraped items** associated with this spider. This operation cannot be undone.
 </Warning>
-
-## Database Storage
-
-Spiders are stored across multiple tables:
-
-### `spiders` Table
-
-- `id`: Primary key (auto-increment)
-- `name`: Spider name (unique per project)
-- `project`: Project name
-- `allowed_domains`: JSON array
-- `start_urls`: JSON array
-- `source_url`: Original website URL
-- `active`: Boolean (currently always true)
-- `callbacks_config`: JSON object with callback definitions
-- `created_at`: Timestamp
-- `updated_at`: Timestamp
-
-### `spider_rules` Table
-
-- `spider_id`: Foreign key to spiders
-- `allow_patterns`: JSON array of URL patterns to allow
-- `deny_patterns`: JSON array of URL patterns to deny
-- `restrict_xpaths`: JSON array of XPath restrictions
-- `restrict_css`: JSON array of CSS restrictions
-- `callback`: Callback function name
-- `follow`: Boolean (whether to follow links)
-- `priority`: Integer (higher = processed first)
-
-### `spider_settings` Table
-
-- `spider_id`: Foreign key to spiders
-- `key`: Setting name
-- `value`: Setting value (as string)
-- `type`: Value type (str, int, bool, json)
-
-## Working with Templates
-
-ScrapAI includes example spider configs in `templates/`:
-
-```bash
-# Import example spider
-./scrapai spiders import templates/bbc_spider.json --project examples
-
-# View all templates
-ls -la templates/*.json
-```
-
-Templates cover various site types:
-- News sites (BBC, Reuters)
-- E-commerce (product listings)
-- Forums (discussion threads)
-- Cloudflare-protected sites
 
 ## Next Steps
 

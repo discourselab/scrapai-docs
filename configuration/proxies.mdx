@@ -5,109 +5,38 @@ description: Configure smart proxy rotation for ScrapAI CLI to avoid blocking
 
 ## Overview
 
-ScrapAI features **SmartProxyMiddleware** that intelligently manages proxy usage to avoid blocks while minimizing costs. The middleware automatically detects when proxies are needed and escalates from direct connections to datacenter proxies to residential proxies.
+ScrapAI's **SmartProxyMiddleware** intelligently manages proxy usage to avoid blocks while minimizing costs. It automatically escalates from direct connections → datacenter proxies → residential proxies (with user approval).
 
-## How It Works
-
-### Auto Mode Strategy (Default)
-
-1. **Start with direct connections** (fast, free)
-2. **Detect blocking** (403/429 errors)
-3. **Automatically retry with datacenter proxy** (cheap, fast)
-4. **Learn which domains need proxies**
-5. **Use proxy proactively** for known-blocked domains
-6. **Expert-in-the-loop** if datacenter fails → ask user before using expensive residential
-
-### Smart Cost Control
-
-- Direct connections are faster and free
-- Proxies only used when necessary
-- Datacenter proxies preferred (cheaper)
-- Residential proxies require explicit user approval
+**Key features:**
+- Starts with direct connections (fast, free)
+- Detects blocking (403/429 errors) and retries with proxies
 - Learns per-domain blocking patterns
-- Reduces proxy bandwidth costs by 80-90%
-- **No surprise costs** - expensive proxies need human approval
+- Requires user approval for expensive residential proxies
+- Reduces proxy costs by 80-90%
 
 ## Proxy Types
 
 ### Datacenter Proxies (Recommended)
-
-<Note>
-**Best for:**
-- Most websites
-- High-speed scraping
-- Cost-effective scaling
-- General use cases
-</Note>
-
-**Advantages:**
-- Fast (low latency)
-- Cheap (< $1/GB typical)
-- High bandwidth
-- Reliable
-
-**Limitations:**
-- Some sites block datacenter IPs
-- Easier to detect
+Fast (low latency), cheap (~$1/GB), high bandwidth. Works for most sites but some block datacenter IPs.
 
 ### Residential Proxies
+Real residential IPs, harder to block, but expensive ($3-15/GB) and slower. Use only when datacenter proxies fail. Requires `--proxy-type residential` flag.
+
+## Running on VPS/Cloud Servers
 
 <Warning>
-**Use only when needed:**
-- Sites that block datacenter IPs
-- Requires explicit `--proxy-type residential` flag
-- Higher cost ($3-15/GB typical)
+Cloud servers (AWS, DigitalOcean, Azure, etc.) often have poor IP reputation. Anti-bot services may block datacenter IPs immediately, causing 403/429 errors or unresolvable Cloudflare challenges.
+
+**Solution:** Use `--proxy-type residential` flag. Residential IPs bypass IP-based blocking.
 </Warning>
 
-**Advantages:**
-- Real residential IPs
-- Harder to block
-- Better for strict sites
-
-**Limitations:**
-- Expensive
-- Slower (higher latency)
-- Lower bandwidth
-
-## ⚠️ Running on VPS/Cloud Servers
-
-<Warning>
-**Remote servers (AWS, DigitalOcean, Hetzner, etc.) often have poor IP reputation!**
-
-Anti-bot services like Cloudflare, DataDome, and PerimeterX track datacenter IP ranges and may block requests from:
-- AWS EC2, Lambda
-- DigitalOcean Droplets
-- Google Cloud Compute
-- Azure VMs
-- Hetzner, OVH, Vultr
-- Any VPS/cloud provider
-
-**Symptoms:**
-- Getting blocked even without high request rates
-- 403/429 errors immediately on first request
-- Cloudflare challenges that never resolve
-- "Access Denied" messages
-
-**Solution:** Use **residential proxies** with `--proxy-type residential` flag. Residential IPs have clean reputation and bypass IP-based blocking.
-</Warning>
-
-**Why this happens:**
-- Datacenter IPs are flagged in threat intelligence databases
-- Many bots, scrapers, and malicious traffic originate from cloud providers
-- Anti-bot services preemptively block entire datacenter IP ranges
-- Your server IP may be on blocklists even if YOU never abused it
-
-**When you MUST use residential proxies:**
-- Running ScrapAI on any cloud/VPS server
-- Scraping sites with strong anti-bot protection
-- Getting blocked despite using datacenter proxies
-- Target site explicitly blocks datacenter IPs
+**When residential proxies are required:**
+- Running on cloud/VPS servers
+- Strong anti-bot protection (Cloudflare, DataDome, PerimeterX)
+- Datacenter proxies getting blocked
 
 <Tip>
-**Local development vs Production:**
-- Local (home ISP): Datacenter proxies usually work fine
-- VPS/Cloud servers: Residential proxies often required
-- Test locally first, then switch to residential when deploying to cloud
+Local development (home ISP) usually works with datacenter proxies. VPS/cloud servers often need residential.
 </Tip>
 
 ## Configuration
@@ -178,239 +107,79 @@ RESIDENTIAL_PROXY_PORT=8080  # Check your provider's documentation
   **Example:** `8080` (check your provider's documentation for the correct port)
 </ParamField>
 
-## Example Configuration
-
-### Datacenter Proxies
-
-```bash
-# Get credentials from your proxy provider
-DATACENTER_PROXY_USERNAME=your_username
-DATACENTER_PROXY_PASSWORD=your_password
-DATACENTER_PROXY_HOST=proxy.provider.com
-DATACENTER_PROXY_PORT=8080  # Check your provider's documentation
-```
-
-### Residential Proxies
-
-```bash
-# Get credentials from your proxy provider
-RESIDENTIAL_PROXY_USERNAME=your_username
-RESIDENTIAL_PROXY_PASSWORD=your_password
-RESIDENTIAL_PROXY_HOST=residential.provider.com
-RESIDENTIAL_PROXY_PORT=8080  # Check your provider's documentation
-```
-
-<Tip>
-Check your proxy provider's documentation for the correct host, port, and whether they offer rotating vs sticky IPs. ScrapAI's SmartProxyMiddleware works with any standard HTTP proxy.
-</Tip>
 
 ## Usage
 
 ### Auto Mode (Default)
-
-Smart escalation with cost control:
-
 ```bash
-# Auto mode (default) - smart escalation
 ./scrapai crawl spider_name --project proj --limit 10
-
-# Explicit auto mode
-./scrapai crawl spider_name --project proj --limit 10 --proxy-type auto
 ```
 
-**How auto mode works:**
+Starts direct → escalates to datacenter on block → prompts for residential if needed.
 
-1. ✅ Start with direct connections (fast, free)
-2. ✅ On block (403/429) → Try datacenter proxy (cheap, fast)
-3. ⚠️ **Datacenter fails** → **Expert-in-the-loop prompt:**
-   ```
-   ⚠️  EXPERT-IN-THE-LOOP: Datacenter proxy failed for some domains
-   🏠 Residential proxy is available but may incur HIGHER COSTS
-
-   Blocked domains: example.com, site.org
-
-   To proceed with residential proxy, run:
-     ./scrapai crawl spider_name --project proj --proxy-type residential
-   ```
-4. 👤 **User decides** whether to use expensive residential proxies
-
-<Note>
-**Cost protection:** Residential proxies require explicit user approval - no surprise costs!
-</Note>
-
-### Datacenter Only
-
-Force datacenter proxy only (even if residential configured):
-
+### Force Datacenter
 ```bash
-./scrapai crawl spider_name --project proj --limit 10 --proxy-type datacenter
+./scrapai crawl spider_name --project proj --proxy-type datacenter
 ```
 
-### Residential Only
-
-Force residential proxy (explicit approval given):
-
+### Force Residential
 ```bash
-./scrapai crawl spider_name --project proj --limit 10 --proxy-type residential
+./scrapai crawl spider_name --project proj --proxy-type residential
 ```
 
-**All modes follow smart strategy:**
-- ✅ Start with direct connections (fast, free)
-- ✅ Only use proxy when blocked (403/429 errors)
-- ✅ Learn which domains need proxies
-- ✅ Use proxy proactively for blocked domains
+All modes try direct connections first and only use proxies when needed (403/429 errors).
 
-The `--proxy-type` flag controls escalation behavior and cost limits.
+## Statistics
 
-## Statistics Tracking
-
-SmartProxyMiddleware tracks proxy usage:
-
-- **Direct requests** - Connections without proxy
-- **Proxy requests** - Connections using proxy
-- **Blocked retries** - Requests that hit 403/429 and retried with proxy
-- **Blocked domains** - Domains that consistently need proxies
-
-Statistics are logged when spider closes:
-
-```
-📊 Proxy Statistics for 'spider_name':
-   Direct requests: 1847
-   Proxy requests: 153
-   Blocked & retried: 153
-   Blocked domains: 2
-   Domains that needed proxy: example.com, protected-site.com
-```
+Proxy usage is logged when spider closes:
+- Direct requests vs proxy requests
+- Blocked retries
+- Domains requiring proxies
 
 ## Proxy Providers
 
-SmartProxyMiddleware works with any HTTP proxy provider. **Use whatever proxy service you prefer.** Popular options include:
+Works with any HTTP proxy provider: [Decodo](https://decodo.com/), [Bright Data](https://brightdata.com/), [Oxylabs](https://oxylabs.io/), [IPRoyal](https://iproyal.com/), etc.
 
-### Datacenter Proxies
-
-- [Decodo](https://decodo.com/)
-- [Bright Data](https://brightdata.com/)
-- [Oxylabs](https://oxylabs.io/)
-- [IPRoyal](https://iproyal.com/)
-
-### Residential Proxies
-
-- Use with `--proxy-type residential` flag on crawl command
-- Same smart strategy (direct first, proxy only when blocked)
-- Most providers offer both datacenter and residential proxies - configure RESIDENTIAL_PROXY_* vars in .env
+Most providers offer both datacenter and residential proxies.
 
 ## Technical Details
 
-### Middleware Logic
+**Middleware logic:**
+1. Try direct connection first
+2. On 403/429 → mark domain blocked, retry with proxy
+3. Use proxy immediately for known-blocked domains
 
-1. On first request to domain → try direct connection
-2. If response is 403/429 → mark domain as blocked, retry with proxy
-3. On subsequent requests to blocked domain → use proxy immediately
-4. Blocked domains remembered for spider lifetime
-
-### Proxy URL Format
-
-```
-http://username:password@proxy.example.com:8080
-```
-
-### Implementation
-
-- **Location:** `middlewares.py`
-- **Class:** `SmartProxyMiddleware`
-- **Priority:** 350 (in `settings.py`)
-- **Type:** Scrapy downloader middleware
-
-### No Spider Configuration Needed
-
-SmartProxyMiddleware works automatically for all spiders once configured in `.env`. The middleware is enabled by default in `settings.py` with priority 350.
+**Implementation:** `SmartProxyMiddleware` in `middlewares.py` (priority 350). Works automatically for all spiders once configured in `.env`.
 
 ## Troubleshooting
 
-### Proxy not being used
+**Proxy not being used:**
+- Verify all 4 variables in `.env` (USERNAME, PASSWORD, HOST, PORT)
+- Test: `curl -x http://user:pass@host:port https://httpbin.org/ip`
+- Check logs for "proxy available" message
 
-1. Check `.env` has all 4 variables set (USERNAME, PASSWORD, HOST, PORT)
-2. Verify proxy credentials are correct
-3. Test proxy manually:
-   ```bash
-   curl -x http://user:pass@host:port https://httpbin.org/ip
-   ```
-4. Check logs for "Datacenter proxy available" message on spider start
+**Still getting blocked:**
+- Switch to residential proxies: `--proxy-type residential`
+- Add delays: set `DOWNLOAD_DELAY` in spider config
+- Reduce concurrency: set `CONCURRENT_REQUESTS`
 
-### Still getting blocked with proxy
+**High costs:**
+- Check blocked domains in spider stats
+- Verify those domains actually need proxies
+- Consider cheaper provider
 
-1. Check if proxy IP is already blocked by target site
-2. Try different proxy provider
-3. Add delays between requests (set `DOWNLOAD_DELAY` in spider config)
-4. Reduce concurrency (set `CONCURRENT_REQUESTS` in spider config)
-5. Switch to residential proxies:
-   ```bash
-   ./scrapai crawl spider_name --project proj --proxy-type residential
-   ```
-
-### Proxy costs too high
-
-SmartProxyMiddleware should already minimize costs by using direct connections first. If costs are still high:
-
-1. Check which domains are marked as blocked (in stats at spider close)
-2. Verify those domains actually need proxies
-3. Consider if site has changed and unblocking is possible
-4. Some sites may require proxies for all requests - this is expected
-5. Consider switching to cheaper proxy provider
-
-### Authentication failed
-
-```bash
-# Verify credentials
-echo $DATACENTER_PROXY_USERNAME
-echo $DATACENTER_PROXY_HOST
-
-# Test proxy connection
-curl -x http://$DATACENTER_PROXY_USERNAME:$DATACENTER_PROXY_PASSWORD@$DATACENTER_PROXY_HOST:$DATACENTER_PROXY_PORT https://httpbin.org/ip
-```
-
-### Connection timeout
-
-1. Check proxy server is reachable:
-   ```bash
-   ping $DATACENTER_PROXY_HOST
-   ```
-2. Verify firewall allows outbound connections
-3. Try different proxy port
-4. Contact proxy provider support
+**Connection issues:**
+- Test connection: `curl -x http://user:pass@host:port https://httpbin.org/ip`
+- Check firewall and network connectivity
+- Verify proxy credentials
 
 ## Best Practices
 
-1. **Start with datacenter proxies**
-   - Cheaper and faster
-   - Works for most sites
-
-2. **Use auto mode**
-   - Minimizes costs automatically
-   - Expert-in-the-loop prevents surprise charges
-
-3. **Monitor statistics**
-   - Review blocked domains in logs
-   - Adjust strategy based on patterns
-
-4. **Test without proxies first**
-   - Many sites don't require proxies
-   - Save costs where possible
-
-5. **Respect rate limits**
-   - Add delays between requests
-   - Reduce concurrency if needed
-   - Proxies don't make aggressive scraping acceptable
-
-## When to Use Proxies
-
-Recommend proxy setup when:
-
-- User asks about proxies or rate limiting
-- Spider is getting blocked (403/429 errors in logs)
-- User needs to scrape at scale (1000s of pages)
-- User mentions proxy provider (Bright Data, Oxylabs, Smartproxy, etc.)
-- Crawls are failing with "Access Denied" or "Too Many Requests"
+- Start with datacenter proxies (cheaper, faster)
+- Use auto mode to minimize costs
+- Monitor blocked domains in statistics
+- Test without proxies first
+- Respect rate limits with delays and reduced concurrency
 
 ## Related Documentation
 

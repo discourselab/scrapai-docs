@@ -184,11 +184,7 @@ Note the returned values:
 </Step>
 
 <Step title="Process custom instruction">
-If `custom_instruction` exists, use it to override default analysis behavior.
-
-**Example:** Instruction "Focus only on research articles" means:
-- Only create rules for research article URL patterns
-- Skip other content sections
+If `custom_instruction` exists, use it to override default analysis behavior (e.g., focus on specific content types, custom selectors).
 </Step>
 
 <Step title="Run analysis phases">
@@ -226,124 +222,6 @@ Always use `--project` matching the queue item's project! Without it, spider def
 </Step>
 </Steps>
 
-## Custom Instruction Handling
-
-When `queue next` returns a `custom_instruction`, use it to override default analysis behavior.
-
-**Examples:**
-
-<Tabs>
-<Tab title="Focus on Specific Content">
-**Instruction:** "Focus only on research articles"
-
-**Action:**
-- Only create rules for research article URL patterns
-- Skip other content sections (news, blog posts, etc.)
-- Narrow down link-following rules
-</Tab>
-
-<Tab title="Include All Sections">
-**Instruction:** "Include all news sections"
-
-**Action:**
-- Create rules for all news-related URL patterns
-- Follow navigation across all news categories
-- Don't limit to specific article types
-</Tab>
-
-<Tab title="Custom Depth">
-**Instruction:** "Only crawl 2 levels deep"
-
-**Action:**
-- Configure spider with depth limit
-- Adjust link-following rules accordingly
-</Tab>
-
-<Tab title="Custom Selectors">
-**Instruction:** "Use h2.headline for titles"
-
-**Action:**
-- Add custom selectors in spider config
-- Override default extractor configuration
-</Tab>
-</Tabs>
-
-<Tip>
-Custom instructions allow per-site customization without modifying the base analysis workflow.
-</Tip>
-
-## Direct vs Queue Processing
-
-Understand when to use queue vs direct processing:
-
-<Tabs>
-<Tab title="Direct Processing">
-**User says:** "Add this website: X" or "Process X"
-
-**Action:**
-- Process immediately (run Phases 1-4)
-- No queue involved
-- Import and optionally test crawl
-
-```bash
-# Example flow
-./scrapai inspect https://example.com --project proj
-# ... run analysis phases ...
-./scrapai import final_spider.json --project proj
-./scrapai crawl spider_name --project proj --limit 10
-```
-</Tab>
-
-<Tab title="Add to Queue">
-**User says:** "Add X to the queue" or "Queue X"
-
-**Action:**
-- Add to queue only - do NOT process
-- User will process later with `queue next`
-
-```bash
-./scrapai queue add https://example.com --project proj -m "Focus on articles"
-```
-</Tab>
-
-<Tab title="Process from Queue">
-**User says:** "Process next" or "Process queue"
-
-**Action:**
-- Claim next item with `queue next`
-- Then run Phases 1-4
-- Import and test crawl
-- Update status (complete/fail)
-
-```bash
-./scrapai queue next --project proj
-# ... run analysis phases ...
-./scrapai import final_spider.json --project proj
-./scrapai crawl spider_name --project proj --limit 10
-./scrapai queue complete <id>
-```
-</Tab>
-</Tabs>
-
-## Project Isolation
-
-<Warning>
-**CRITICAL:** NEVER omit `--project` when importing spiders from queue.
-
-Without it, spider defaults to "default" project, mixing data across projects. Always match the queue item's project.
-</Warning>
-
-**Correct:**
-```bash
-./scrapai import final_spider.json --project myproject
-./scrapai crawl spider_name --project myproject
-```
-
-**Incorrect:**
-```bash
-./scrapai import final_spider.json  # Defaults to "default" project!
-./scrapai crawl spider_name  # Defaults to "default" project!
-```
 
 ## Complete Example
 

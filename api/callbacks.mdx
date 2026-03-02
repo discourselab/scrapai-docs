@@ -21,14 +21,8 @@ Callbacks extract custom fields from structured data like products, jobs, listin
 ## CallbackSchema
 
 <ParamField path="extract" type="object" required>
-  Field extraction rules (mapping of field name → FieldExtractSchema)
-  
-  **Validation:**
-  - Min 1 field required
-  - Each key is the field name
-  - Each value is a FieldExtractSchema
-  
-  **Example:**
+  Field extraction rules (mapping of field name → FieldExtractSchema). Min 1 field required.
+
   ```json
   {
     "extract": {
@@ -43,14 +37,9 @@ Callbacks extract custom fields from structured data like products, jobs, listin
 
 <ParamField path="css" type="string" default="null">
   CSS selector for extraction
-  
-  **Syntax:**
-  - `"h1"` - Element
-  - `"h1::text"` - Text content
-  - `"img::attr(src)"` - Attribute value
-  - `"div.class > p"` - Nested selector
-  
-  **Example:**
+
+  **Syntax:** `"h1"` (element), `"h1::text"` (text), `"img::attr(src)"` (attribute)
+
   ```json
   {"css": "h1.product-name::text"}
   ```
@@ -58,8 +47,7 @@ Callbacks extract custom fields from structured data like products, jobs, listin
 
 <ParamField path="xpath" type="string" default="null">
   XPath expression for extraction
-  
-  **Example:**
+
   ```json
   {"xpath": "//h1/text()"}
   ```
@@ -67,32 +55,20 @@ Callbacks extract custom fields from structured data like products, jobs, listin
 
 <ParamField path="get_all" type="boolean" default="false">
   Extract all matches (returns list)
-  
-  **Example:**
+
   ```json
   {
     "css": "li.feature::text",
     "get_all": true
   }
   ```
-  
-  **Output:** `["WiFi", "Bluetooth", "GPS"]`
 </ParamField>
 
 <ParamField path="processors" type="ProcessorSchema[]" default="null">
-  Value transformations to apply sequentially
-  
-  **Available processors:**
-  - `strip` - Remove whitespace
-  - `replace` - Replace substring
-  - `regex` - Extract with pattern
-  - `cast` - Convert type (int, float, bool, str)
-  - `join` - Join list to string
-  - `default` - Fallback value
-  - `lowercase` - Convert to lowercase
-  - `parse_datetime` - Parse dates
-  
-  **Example:**
+  Value transformations applied sequentially
+
+  **Available:** `strip`, `replace`, `regex`, `cast`, `join`, `default`, `lowercase`, `parse_datetime`
+
   ```json
   {
     "css": "span.price::text",
@@ -109,20 +85,16 @@ Callbacks extract custom fields from structured data like products, jobs, listin
 ### Nested Lists
 
 <ParamField path="type" type="string" default="null">
-  Field type (use `"nested_list"` for extracting lists of objects)
-  
-  **Example:**
+  Field type. Use `"nested_list"` for extracting lists of objects.
+
   ```json
   {"type": "nested_list"}
   ```
 </ParamField>
 
 <ParamField path="selector" type="string" default="null">
-  CSS selector for nested list items
-  
-  **Required when:** `type: "nested_list"`
-  
-  **Example:**
+  CSS selector for nested list items. Required when `type: "nested_list"`.
+
   ```json
   {
     "type": "nested_list",
@@ -132,13 +104,8 @@ Callbacks extract custom fields from structured data like products, jobs, listin
 </ParamField>
 
 <ParamField path="extract" type="object" default="null">
-  Nested extraction config (field name → FieldExtractSchema)
-  
-  **Required when:** `type: "nested_list"`
-  
-  **Max depth:** 3 levels
-  
-  **Example:**
+  Nested extraction config (field name → FieldExtractSchema). Required when `type: "nested_list"`. Max depth: 3 levels.
+
   ```json
   {
     "type": "nested_list",
@@ -158,27 +125,20 @@ Callbacks extract custom fields from structured data like products, jobs, listin
 ## ProcessorSchema
 
 <ParamField path="type" type="string" required>
-  Processor type
-  
-  **Allowed values:**
-  - `strip`, `replace`, `regex`, `cast`, `join`, `default`, `lowercase`, `parse_datetime`
-  
-  **Example:**
+  Processor type: `strip`, `replace`, `regex`, `cast`, `join`, `default`, `lowercase`, `parse_datetime`
+
   ```json
   {"type": "strip"}
   ```
 </ParamField>
 
-**Processor-specific parameters:**
-
-- **replace:** `old` (string), `new` (string)
+**Processor parameters:**
+- **replace:** `old`, `new` (strings)
 - **regex:** `pattern` (string), `group` (int, default: 1)
 - **cast:** `to` ("int"|"float"|"bool"|"str")
 - **join:** `separator` (string, default: " ")
 - **default:** `default` (any)
 - **parse_datetime:** `format` (string, optional)
-
-See complete processor reference in related docs.
 
 ## Examples
 
@@ -296,66 +256,21 @@ See complete processor reference in related docs.
 
 ## Field Storage
 
-### Standard Fields
+**Standard fields** map to database columns: `url`, `title`, `content`, `author`, `published_date`
 
-Map to database columns:
-- `url` → scraped_items.url
-- `title` → scraped_items.title
-- `content` → scraped_items.content
-- `author` → scraped_items.author
-- `published_date` → scraped_items.published_date
-
-### Custom Fields
-
-Stored in `metadata_json` column:
-- `price`, `rating`, `category`, etc.
-- Displayed in `show` command
-- Flattened in exports (CSV/JSON/JSONL)
+**Custom fields** stored in `metadata_json` column and flattened in exports
 
 ## Reserved Names
 
-**Cannot use as callback names:**
-- `parse_article`
-- `parse_start_url`
-- `start_requests`
-- `from_crawler`
-- `closed`
-- `parse`
+Cannot use as callback names: `parse_article`, `parse_start_url`, `start_requests`, `from_crawler`, `closed`, `parse`
 
 ## Validation
 
-### Callback Name
+**Callback names:** Must be valid Python identifiers (e.g., `parse_product`, not `parse-product`)
 
-```python
-# Valid
-"parse_product", "extract_job", "get_listing"
+**Field extraction:** Must have `css`/`xpath` selector OR `type: "nested_list"` with `selector` and `extract`
 
-# Invalid
-"parse-product"  # No hyphens
-"123parse"       # Must start with letter/underscore
-"parse article"  # No spaces
-```
-
-### Field Extraction
-
-Must have either:
-- `css` or `xpath` selector, OR
-- `type: "nested_list"` with `selector` and `extract`
-
-### Cross-Validation
-
-Rules must reference defined callbacks:
-
-```json
-{
-  "rules": [
-    {"allow": ["/product/.*"], "callback": "parse_product"}
-  ],
-  "callbacks": {
-    "parse_product": { /* ... */ }
-  }
-}
-```
+**Cross-validation:** Rules must reference defined callbacks
 
 ## Workflow
 

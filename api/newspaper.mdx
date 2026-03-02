@@ -3,26 +3,7 @@ title: Newspaper4k Extractor
 description: General-purpose article extraction for news and blogs
 ---
 
-The Newspaper4k extractor is a fast, general-purpose content extractor optimized for news articles and blog posts. It automatically identifies article structure without configuration.
-
-## Overview
-
-**Best for:**
-- News websites
-- Blog posts
-- Magazine articles
-- Clean, semantic HTML
-
-**Strengths:**
-- Fast extraction
-- Automatic article detection
-- Extracts metadata (author, date, keywords, images)
-- No configuration needed
-
-**Limitations:**
-- Requires semantic HTML structure
-- May struggle with unusual layouts
-- Not suitable for non-article content (e-commerce, listings)
+The Newspaper4k extractor is a fast, general-purpose content extractor optimized for news articles and blog posts. It automatically identifies article structure and extracts metadata (author, date, keywords, images) without configuration.
 
 ## Configuration
 
@@ -35,8 +16,6 @@ Enable in `EXTRACTOR_ORDER`:
   }
 }
 ```
-
-No additional configuration required.
 
 ## Extracted Fields
 
@@ -110,17 +89,7 @@ ScrapedArticle(
 
 ## Fallback Behavior
 
-**Newspaper fails when:**
-- Title extraction fails and no `title_hint` provided
-- Content extraction returns empty or < 100 characters
-- HTML structure is non-semantic (divs without semantic classes)
-
-**Fallback to next extractor:**
-```json
-"EXTRACTOR_ORDER": ["newspaper", "trafilatura"]
-```
-
-If newspaper fails, trafilatura is tried next.
+Newspaper fails when title extraction fails (without `title_hint`), content is < 100 characters, or HTML structure is non-semantic. Configure fallback extractors in `EXTRACTOR_ORDER`.
 
 ## Title Hints
 
@@ -132,21 +101,6 @@ The spider can provide a `title_hint` from other sources:
 ```
 
 If newspaper fails to extract title, it uses the hint.
-
-## Performance
-
-**Speed:** Fast (processes HTML in-memory)
-
-**Recommended concurrency:**
-```json
-{
-  "settings": {
-    "EXTRACTOR_ORDER": ["newspaper", "trafilatura"],
-    "CONCURRENT_REQUESTS": 16,
-    "DOWNLOAD_DELAY": 1
-  }
-}
-```
 
 ## When to Use
 
@@ -192,16 +146,6 @@ scrapai crawl spider --limit 1 --project proj
 2. Try trafilatura as fallback
 3. Use custom selectors if generic extractors fail
 
-## Comparison with Trafilatura
-
-| Feature | Newspaper | Trafilatura |
-|---------|-----------|-------------|
-| **Speed** | Fast | Fast |
-| **Accuracy** | Good | Excellent |
-| **Metadata** | Rich (keywords, summary, images) | Basic (description, tags) |
-| **Best For** | News sites | Any text content |
-| **Fallback** | Use together: `["newspaper", "trafilatura"]` | |
-
 ## Configuration Examples
 
 ### News Site (Primary Strategy)
@@ -241,10 +185,6 @@ scrapai crawl spider --limit 1 --project proj
   }
 }
 ```
-
-**Behavior:**
-- Try newspaper first (works for most WordPress blogs)
-- Fallback to custom selectors for non-standard templates
 
 ## Related
 

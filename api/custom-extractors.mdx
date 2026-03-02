@@ -224,10 +224,6 @@ scrapai show spider 2 --project proj
 }
 ```
 
-**Storage:**
-- `title`, `content`, `author`, `date` → database columns
-- `category`, `tags` → `metadata_json`
-
 ### E-commerce Product
 
 ```json
@@ -289,17 +285,7 @@ scrapai show spider 2 --project proj
 
 ## Validation
 
-Custom extractor validates:
-
-**Title:**
-- Must exist
-- Min length: 5 characters
-
-**Content:**
-- Must exist
-- Min length: 100 characters
-
-**If validation fails:** Returns `None`, next extractor is tried (if configured)
+Custom extractor requires title (min 5 chars) and content (min 100 chars). If validation fails, returns `None` and tries next extractor (if configured).
 
 ## Fallback Strategy
 
@@ -309,55 +295,19 @@ Recommended: Use custom with fallback to generic
 "EXTRACTOR_ORDER": ["custom", "newspaper", "trafilatura"]
 ```
 
-**Behavior:**
-1. Try custom selectors (highest accuracy when configured)
-2. If selectors fail (e.g., site updated) → try newspaper
-3. If newspaper fails → try trafilatura
-
 ## Debugging
 
-**Selector returns None:**
+Test selectors using:
 
 ```bash
-# Test selector
-scrapai analyze page.html --test "h1.wrong-class"
-```
-
-Check:
-- Selector matches element?
-- Element has text content?
-- Class name spelled correctly?
-
-**Content too short:**
-
-```bash
+scrapai analyze page.html --test "h1.article-title"
 scrapai analyze page.html --test "div.article-body"
 ```
 
-Check:
-- Selector targets main content (not sidebar)?
-- Returns >100 characters?
-
-**Extraction succeeded but wrong content:**
-
-- Selector too generic (matches multiple elements, uses first)
-- Test on multiple pages to verify consistency
-
-## Performance
-
-**Speed:** Fast (BeautifulSoup parsing)
-
-**Recommended concurrency:**
-
-```json
-{
-  "settings": {
-    "EXTRACTOR_ORDER": ["custom"],
-    "CONCURRENT_REQUESTS": 16,
-    "DOWNLOAD_DELAY": 1
-  }
-}
-```
+Common issues:
+- Selector doesn't match element (typo in class name)
+- Content too short (selector targets sidebar instead of main content)
+- Wrong content extracted (selector too generic, matches multiple elements)
 
 ## Related
 

@@ -3,7 +3,7 @@ title: Spider Settings
 description: Configuration options for spider behavior
 ---
 
-Spider settings control extraction strategies, concurrency, delays, and feature flags. Settings are flexible key-value pairs with validation for common options.
+Spider settings control extraction strategies, concurrency, delays, and feature flags.
 
 ## Common Settings
 
@@ -96,9 +96,7 @@ Spider settings control extraction strategies, concurrency, delays, and feature 
 
 <ParamField path="CLOUDFLARE_ENABLED" type="boolean" default="null">
   Enable Cloudflare bypass
-  
-  **Use when:** Site returns "Checking your browser" or 403 errors
-  
+
   **Example:**
   ```json
   "CLOUDFLARE_ENABLED": true
@@ -122,24 +120,20 @@ Spider settings control extraction strategies, concurrency, delays, and feature 
 
 <ParamField path="PLAYWRIGHT_WAIT_SELECTOR" type="string" default="null">
   CSS selector to wait for before extracting
-  
-  **Use when:** Content loads after page renders (AJAX, lazy loading)
-  
+
   **Timeout:** 30 seconds
-  
+
   **Example:**
   ```json
   "PLAYWRIGHT_WAIT_SELECTOR": ".article-content"
   ```
-  
+
   See [Playwright Extractor](/api/playwright) for details.
 </ParamField>
 
 <ParamField path="PLAYWRIGHT_DELAY" type="float" default="null">
   Additional seconds to wait after page load
-  
-  **Use when:** Content loads with unpredictable timing
-  
+
   **Example:**
   ```json
   "PLAYWRIGHT_DELAY": 5
@@ -148,11 +142,9 @@ Spider settings control extraction strategies, concurrency, delays, and feature 
 
 <ParamField path="INFINITE_SCROLL" type="boolean" default="null">
   Enable infinite scroll behavior
-  
-  **Use when:** Single-page sites load content on scroll
-  
+
   **Requires:** `"playwright"` in `EXTRACTOR_ORDER`
-  
+
   **Example:**
   ```json
   "INFINITE_SCROLL": true
@@ -297,7 +289,7 @@ Spider settings control extraction strategies, concurrency, delays, and feature 
 
 ## Custom Settings
 
-The schema allows arbitrary key-value pairs for custom Scrapy settings:
+Arbitrary key-value pairs for custom Scrapy settings (passed directly without validation):
 
 ```json
 {
@@ -308,8 +300,6 @@ The schema allows arbitrary key-value pairs for custom Scrapy settings:
   }
 }
 ```
-
-Custom settings are passed directly to Scrapy without validation.
 
 ## Validation Errors
 

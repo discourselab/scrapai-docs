@@ -3,7 +3,7 @@ title: "CLI Overview"
 description: "Complete command-line interface reference for ScrapAI"
 ---
 
-The ScrapAI CLI provides a comprehensive interface for building, managing, and running AI-powered web scrapers. All commands interact with a database-first architecture where spiders are stored as JSON configurations.
+The ScrapAI CLI provides a command-line interface for building, managing, and running AI-powered web scrapers. Spiders are stored as JSON configurations in the database.
 
 ## Architecture
 
@@ -25,10 +25,6 @@ The `scrapai` script automatically activates the virtual environment and delegat
 # Windows
 scrapai <command> [options]
 ```
-
-<Note>
-All commands run through the `scrapai` wrapper, which handles virtual environment activation automatically.
-</Note>
 
 ## Command Categories
 
@@ -80,7 +76,7 @@ Most commands require a `--project` flag to specify the project context:
 ```
 
 <Tip>
-Default project name is `default` if not specified, but it's recommended to always use explicit project names for clarity.
+Default project is `default` if not specified.
 </Tip>
 
 ### Output Modes
@@ -160,19 +156,3 @@ Export scraped data in various formats:
 
 - **SQLite**: Default, zero configuration
 - **PostgreSQL**: Production deployments, atomic queue operations
-
-Switch by updating `DATABASE_URL` in `.env` and running migrations.
-
-## Next Steps
-
-<CardGroup cols={2}>
-
-<Card title="Setup Commands" icon="rocket" href="/cli/setup">
-  Install ScrapAI and verify your environment
-</Card>
-
-<Card title="Spider Management" icon="spider" href="/cli/spiders">
-  Learn how to import and manage spider configurations
-</Card>
-
-</CardGroup>

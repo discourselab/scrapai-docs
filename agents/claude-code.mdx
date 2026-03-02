@@ -9,6 +9,8 @@ Claude Code is the recommended AI agent for ScrapAI. The complete workflow instr
 
 **Permission enforcement at the tool level.** Claude Code is the only agent that can enforce hard blocks on file operations and shell commands. When configured, it **cannot** write or edit Python files, even if it wants to.
 
+**Sub-agent parallelization without context compaction.** Claude Code can spawn sub-agents (via the Task tool) that work independently. Process multiple websites in one session without losing context. In our internal experiments, we processed 40 websites in a single Claude session before hitting conversation compaction.
+
 Other agents (OpenCode, Cursor, Windsurf) receive the same instructions but lack enforcement. They can choose to ignore the rules. Claude Code can't.
 
 ## Setup
@@ -44,66 +46,13 @@ Other agents (OpenCode, Cursor, Windsurf) receive the same instructions but lack
 
 ## Permission Rules
 
-When you run `./scrapai setup`, it creates `.claude/settings.local.json` with hard enforcement of allow/deny lists:
+`./scrapai setup` creates `.claude/settings.local.json` with tool-level enforcement:
 
-```json .claude/settings.local.json
-{
-  "permissions": {
-    "allow": [
-      "Read",
-      "Write",
-      "Edit",
-      "Update",
-      "Glob",
-      "Grep",
-      "Bash(./scrapai:*)",
-      "Bash(source:*)",
-      "Bash(sqlite3:*)",
-      "Bash(psql:*)",
-      "Bash(xvfb-run:*)"
-    ],
-    "deny": [
-      "Edit(scrapai)",
-      "Update(scrapai)",
-      "Edit(.claude/*)",
-      "Update(.claude/*)",
-      "Write(**/*.py)",
-      "Edit(**/*.py)",
-      "Update(**/*.py)",
-      "MultiEdit(**/*.py)",
-      "Write(.env)",
-      "Write(secrets/**)",
-      "Write(config/**/*.key)",
-      "Write(**/*password*)",
-      "Write(**/*secret*)",
-      "WebFetch",
-      "WebSearch",
-      "Bash(rm:*)"
-    ]
-  }
-}
-```
+**Blocked:** Python file modifications, sensitive files (.env, secrets), web access (WebFetch/WebSearch), destructive commands (rm)
 
-### What's Blocked
+**Allowed:** Reading all files, JSON operations, CLI commands (`./scrapai`, `sqlite3`, `psql`), file search (Glob/Grep), safe git operations
 
-- **Python file modifications:** Cannot create, edit, or update any `.py` files
-- **Core file modifications:** Cannot edit the `scrapai` entry script or `.claude/*` settings
-- **Sensitive files:** Cannot write `.env`, secrets, API keys, passwords
-- **Web access:** WebFetch and WebSearch are blocked (agent works with local files only)
-- **Destructive commands:** Cannot run `rm` commands
-
-### What's Allowed
-
-- **Reading files:** Can read any file (Python, JSON, HTML, sections.md, etc.)
-- **JSON operations:** Can create, read, and edit JSON configs
-- **CLI commands:** Can run `./scrapai` commands, `source`, database clients (`sqlite3`, `psql`), and `xvfb-run`
-- **File operations:** Read, Write, Edit, Update, Glob, Grep on allowed patterns
-- **File search:** Can use `glob` and `grep` to explore the codebase
-- **Git operations:** Can run safe git commands (status, diff, log, commit, push)
-
-<Note>
-  The agent can still read Python files to understand how the framework works, but it cannot modify them. This is intentional—understanding the code helps it generate better configs.
-</Note>
+The agent can read Python files to understand the framework but cannot modify them.
 
 ## How the Agent Works
 
@@ -128,206 +77,57 @@ This keeps context usage low and scraping analysis high.
 
 ## Allowed Tools
 
-The agent has access to these tools:
-
-<AccordionGroup>
-  <Accordion title="./scrapai CLI (all commands)">
-    - `./scrapai inspect <url>` — fetch and save HTML
-    - `./scrapai analyze <html>` — analyze HTML structure, test selectors
-    - `./scrapai extract-urls --file <html>` — extract URLs from saved HTML
-    - `./scrapai spiders import <json>` — import/update spider config
-    - `./scrapai crawl <name>` — run test or production crawl
-    - `./scrapai show <name>` — view scraped items
-    - `./scrapai export <name>` — export data (CSV, JSON, JSONL, Parquet)
-    - `./scrapai queue add/list/next/complete` — queue operations
-    - `./scrapai db migrate/stats/query` — database operations
-  </Accordion>
-  
-  <Accordion title="File operations">
-    - **Read:** Read any file (Python, JSON, HTML, etc.)
-    - **Write:** Create new files (JSON, Markdown, text files)
-    - **Edit:** Modify existing files (JSON, Markdown, text files)
-    - **Glob:** Search for files by pattern
-    - **Grep:** Search file contents
-    
-    **Blocked:** Writing or editing `.py` files
-  </Accordion>
-  
-  <Accordion title="Bash (limited)">
-    - Git operations (status, diff, log, commit, push)
-    - npm, docker, system commands
-    
-    **Blocked:** `fetch`, `curl`, `wget` (use `./scrapai inspect`), `grep`/`rg`/`awk`/`sed` (use Grep tool), `cat`/`head`/`tail` (use Read tool), `find`/`ls` (use Glob tool), `mkdir` (auto-created), `python`/`python3` (use `./scrapai analyze`)
-  </Accordion>
-  
-  <Accordion title="Task (parallel subagents)">
-    Spawn parallel subagents for batch processing (max 5 at a time).
-    
-    Each subagent processes one website through all 4 phases sequentially.
-  </Accordion>
-</AccordionGroup>
+- **./scrapai CLI:** All commands (inspect, analyze, crawl, spiders, queue, db, export)
+- **File operations:** Read, Write, Edit (JSON/Markdown/text only, no .py files), Glob, Grep
+- **Bash:** Git operations, npm, docker. Use CLI/tools instead of: curl/wget (use `./scrapai inspect`), cat/grep/find (use Read/Grep/Glob)
+- **Task (sub-agents):** Spawn parallel sub-agents for batch processing (max 5 at a time)
 
 ## Example Workflows
 
-### Single Website
-
+**Single website:**
 ```
 You: "Add https://arstechnica.com to my tech project"
-
-Agent:
-I'll analyze Ars Technica and create a spider for your tech project.
-
-Phase 1: Analyzing site structure...
-✓ Inspected homepage at https://arstechnica.com
-✓ Extracted 127 URLs
-✓ Identified sections:
-  - Articles: /[year]/[month]/[slug]/
-  - Features: /features/[year]/[month]/[slug]/
-  - Reviews: /reviews/[year]/[month]/[slug]/
-✓ Documented URL patterns in sections.md
-
-Phase 2: Testing extractors...
-✓ Inspected sample article
-✓ Generic extractors work well (newspaper + trafilatura)
-✓ All fields extracted: title, content, author, date
-
-Phase 3: Creating spider config...
-✓ Created test_spider.json (5 sample URLs)
-✓ Created final_spider.json (full config)
-
-Phase 4: Testing and importing...
-✓ Imported test spider
-✓ Ran test crawl: 5/5 articles extracted successfully
-✓ Verified output: all fields present and accurate
-✓ Imported final spider to database
-
-Spider 'arstechnica_com' is ready for production.
-
-Run production crawl with:
-./scrapai crawl arstechnica_com --project tech
+Agent: Analyzes site → Tests extractors → Creates config → Test crawl (5/5) → Imports
+Spider 'arstechnica_com' ready: ./scrapai crawl arstechnica_com --project tech
 ```
 
-### Batch Processing (Parallel)
-
+**Batch processing (parallel sub-agents):**
 ```
-You: "Process all 12 sites in queue for my news project"
-
-Agent:
-I'll process all 12 websites in the queue in parallel batches.
-
-Batch 1 (5 websites):
-[Spawns 5 Task agents, each processing one site through Phase 1-4]
-
-Completed:
-✓ techcrunch.com → spider created
-✓ theverge.com → spider created
-✓ wired.com → spider created
-✓ arstechnica.com → spider created
-✗ engadget.com → failed (Cloudflare challenge, needs --browser flag)
-
-Batch 2 (5 websites):
-[Continues...]
-
-Batch 3 (2 websites):
-[Completes remaining sites]
-
-Final results:
-✓ 11 spiders created successfully
-✗ 1 failed (engadget.com - retry with Cloudflare enabled)
-
-All successful spiders are ready for production crawls.
+You: "Process all 12 sites in queue"
+Agent: Spawns 5 sub-agents → Batch 1 (5 sites) → Batch 2 (5 sites) → Batch 3 (2 sites)
+Result: 11 spiders created, 1 failed (Cloudflare - retry needed)
 ```
 
-### Fixing a Broken Spider
-
+**Fixing broken spider:**
 ```
 You: "The BBC spider is broken. Fix it."
-
-Agent:
-I'll re-analyze the BBC site and update the spider.
-
-✓ Inspected current BBC article page
-✓ Detected structure change: new CSS classes for title and content
-✓ Updated custom selectors:
-  - title: h1.article-headline → h1[data-testid="headline"]
-  - content: div.article-body → article[data-component="text-block"]
-✓ Tested on 5 recent articles: all fields extracted correctly
-✓ Imported updated config (same spider name, auto-updates)
-
-Spider 'bbc_co_uk' has been updated and verified.
+Agent: Re-analyzes site → Updates selectors → Tests on 5 articles → Imports update
+Spider 'bbc_co_uk' updated and verified.
 ```
 
 ## Common Questions
 
 <AccordionGroup>
-  <Accordion title="Can the agent modify Scrapy settings?">
-    No. The agent cannot edit `scrapy_settings.py` or any Python files. It can only configure spider-specific settings in JSON configs (e.g., `DOWNLOAD_DELAY`, `CONCURRENT_REQUESTS`, `EXTRACTOR_ORDER`).
+  <Accordion title="Can the agent modify Scrapy settings or fix framework bugs?">
+    No. Agent cannot edit Python files. It configures spider-specific settings in JSON configs only. Framework changes require manual edits.
   </Accordion>
-  
-  <Accordion title="What if I want the agent to fix a bug in the framework?">
-    You need to do that manually. The agent can identify the bug and suggest a fix, but it cannot apply the fix itself due to permission rules.
-    
-    This is intentional—framework code is privileged and should require human review.
+
+  <Accordion title="What if the agent gets stuck?">
+    Guide it: "The blog section is at /articles/, not /blog/. Update the spider." Agent re-reads notes and regenerates config.
   </Accordion>
-  
-  <Accordion title="Can the agent create custom extractor classes?">
-    No. The agent works with the existing extractors (newspaper, trafilatura, playwright, custom CSS selectors) and custom callbacks. If you need a new extractor type, you'll need to add it manually in Python.
-  </Accordion>
-  
-  <Accordion title="What if the agent gets stuck or confused?">
-    You can guide it by providing more context or correcting its assumptions. For example:
-    
-    ```
-    You: "The blog section is at /articles/, not /blog/. Update the spider."
-    ```
-    
-    The agent will re-read its analysis notes, correct the URL pattern, and regenerate the config.
-  </Accordion>
-  
+
   <Accordion title="Can I override the agent's decisions?">
-    Yes. You can hand-edit the JSON configs at any time. The agent-generated configs are starting points, not final products.
-    
-    After editing, run:
-    ```bash
-    ./scrapai spiders import your_config.json --project yourproject
-    ```
+    Yes. Hand-edit JSON configs anytime, then: `./scrapai spiders import your_config.json --project yourproject`
   </Accordion>
 </AccordionGroup>
 
 ## Troubleshooting
 
-### Agent tries to edit Python files
+**Agent tries to edit Python files:** Permission rules working correctly. Remind: "You cannot edit Python files. Use CLI commands only."
 
-If you see errors like "Permission denied: cannot edit *.py", the permission rules are working correctly. The agent should recognize this and work within the constraints.
+**Agent skips phases:** Remind: "Complete all 4 phases. Don't skip Phase 2."
 
-If it keeps trying, remind it:
-```
-You: "You cannot edit Python files. Use the CLI commands only."
-```
-
-### Agent skips phases
-
-The workflow is sequential: Phase 1 → 2 → 3 → 4. If the agent tries to skip steps, remind it:
-```
-You: "Complete all 4 phases. Don't skip Phase 2."
-```
-
-### Agent runs commands too quickly
-
-The agent should run commands **one at a time** and read the output before proceeding. If it chains commands with `&&`, remind it:
-```
-You: "Run commands one at a time. Read the output before the next command."
-```
-
-### Permission rules not working
-
-If you're using Claude Code and permission rules aren't enforced:
-
-1. Check that `./scrapai setup` completed successfully
-2. Verify `.claude/settings.local.json` exists with the permission rules
-3. Restart Claude Code
-
-If you're using a different agent, remember that **only Claude Code enforces permissions**. Other agents receive instructions but can ignore them.
+**Permission rules not working:** Check `./scrapai setup` completed, verify `.claude/settings.local.json` exists, restart Claude Code. Remember: only Claude Code enforces permissions.
 
 ## Next Steps
 

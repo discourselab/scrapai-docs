@@ -49,7 +49,6 @@ Scrapy's JOBDIR feature saves:
 **Console output:**
 ```log
 💾 Checkpoint enabled: ./data/myproject/myspider/checkpoint
-Press Ctrl+C to pause, run same command to resume
 ```
 
 **Pause the crawl:**
@@ -94,14 +93,7 @@ DATA_DIR/<project>/<spider>/checkpoint/
 └── checkpoint/      # Checkpoint state (auto-cleaned on success)
 ```
 
-## Automatic Cleanup
-
-<Note>
-**Automatic cleanup on successful completion:**
-- When spider completes successfully (no Ctrl+C), checkpoint directory is automatically deleted
-- Saves disk space
-- Only failed/interrupted crawls keep checkpoints
-</Note>
+## Cleanup
 
 **Manual cleanup:**
 
@@ -121,7 +113,6 @@ rm -rf ./data/myproject/myspider/checkpoint/
 **Output:**
 ```log
 💾 Checkpoint enabled: ./data/news/techcrunch/checkpoint
-Press Ctrl+C to pause, run same command to resume
 
 Crawling: https://techcrunch.com/
 Scraped 50 items...
@@ -216,14 +207,12 @@ If you change `--proxy-type` when resuming, the checkpoint is automatically clea
 Uses datacenter proxies (auto mode default)
 </Step>
 
-<Step title="Datacenter fails, get expert prompt">
+<Step title="Datacenter fails, pause crawl">
 ```log
 ⚠️  EXPERT-IN-THE-LOOP: Datacenter proxy failed
 🏠 To use residential proxy, run:
   ./scrapai crawl myspider --project proj --proxy-type residential
 ```
-
-Press Ctrl+C to pause
 </Step>
 
 <Step title="Resume with residential proxy">
@@ -243,8 +232,6 @@ Press Ctrl+C to pause
 **Why checkpoint is cleared:**
 - Ensures blocked URLs are retried with new proxy type
 - Prevents Scrapy's dupefilter from skipping already-seen failed URLs
-- Simpler and safer than complex retry logic
-- User explicitly chose expensive residential proxy, accepts comprehensive re-crawl
 
 ## When Checkpoints Are Useful
 
@@ -302,17 +289,6 @@ ls -la ./data/myproject/myspider/checkpoint/
 If directory doesn't exist:
 - Checkpoint was cleaned up (successful completion)
 - Or never created (test mode with `--limit`)
-</Step>
-
-<Step title="Verify same command">
-Must use exact same command to resume:
-```bash
-# Original
-./scrapai crawl myspider --project proj --proxy-type datacenter
-
-# Resume (same command)
-./scrapai crawl myspider --project proj --proxy-type datacenter
-```
 </Step>
 
 <Step title="Check for proxy type change">

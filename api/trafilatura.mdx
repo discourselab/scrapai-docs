@@ -43,32 +43,20 @@ No additional configuration required.
 
 <ResponseField name="title" type="string">
   Page title (extracted from `<title>`, `<h1>`, or meta tags)
-  
-  Falls back to `title_hint` if extraction fails.
 </ResponseField>
 
 <ResponseField name="content" type="string">
   Main content text (cleaned, boilerplate removed)
-  
+
   **Validation:** Min 100 characters
-  
-  **Trafilatura's strength:** Excellent at identifying main content vs navigation/ads
 </ResponseField>
 
 <ResponseField name="author" type="string">
   Author name (if available in metadata)
-  
-  Extracted from:
-  - `<meta name="author">`
-  - JSON-LD structured data
 </ResponseField>
 
 <ResponseField name="published_date" type="datetime">
   Publication date (if available)
-  
-  Extracted from:
-  - Structured data (JSON-LD, microdata)
-  - Common date patterns
 </ResponseField>
 
 ### Metadata Fields
@@ -120,22 +108,7 @@ ScrapedArticle(
 
 ## Fallback Behavior
 
-**Trafilatura fails when:**
-- Content extraction returns empty or < 100 characters
-- No text content found (e.g., image-only pages)
-
-**Common fallback patterns:**
-
-```json
-// Try trafilatura first (highest accuracy)
-"EXTRACTOR_ORDER": ["trafilatura", "newspaper"]
-
-// Try newspaper first (more metadata)
-"EXTRACTOR_ORDER": ["newspaper", "trafilatura"]
-
-// Playwright + trafilatura for JS content
-"EXTRACTOR_ORDER": ["playwright", "trafilatura"]
-```
+Trafilatura fails when content extraction returns empty or < 100 characters.
 
 ## Performance
 
@@ -168,24 +141,6 @@ ScrapedArticle(
 <Warning>E-commerce or structured data - use custom extractors</Warning>
 <Warning>JavaScript-rendered content - use playwright first</Warning>
 
-## Use with Playwright
-
-Trafilatura is the **recommended extractor** after Playwright rendering:
-
-```json
-{
-  "settings": {
-    "EXTRACTOR_ORDER": ["playwright", "trafilatura"],
-    "PLAYWRIGHT_WAIT_SELECTOR": ".article-content",
-    "PLAYWRIGHT_DELAY": 3
-  }
-}
-```
-
-**Why:**
-- Playwright renders JavaScript → full HTML
-- Trafilatura extracts clean content from rendered HTML
-- Best accuracy for JS-heavy sites
 
 ## Comparison with Newspaper
 
@@ -229,10 +184,7 @@ scrapai crawl spider --limit 1 --project proj
 scrapai show spider 1 --project proj
 ```
 
-**If extraction fails:**
-1. Check if page has text content (not image-only)
-2. Try with Playwright if content is JS-rendered
-3. Use custom selectors if generic extraction doesn't work
+**If extraction fails:** Try with Playwright for JS-rendered content, or use custom selectors.
 
 ## Configuration Examples
 
@@ -297,11 +249,6 @@ scrapai show spider 1 --project proj
   }
 }
 ```
-
-**Why trafilatura for docs:**
-- Clean content extraction without navigation/sidebars
-- Works on varied doc site structures
-- Fast, reliable
 
 ## Advanced Usage
 
