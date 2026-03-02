@@ -27,7 +27,7 @@ ScrapAI uses SQLite by default (no database installation required). For producti
 
 - **Linux** (Ubuntu, Debian, CentOS, Fedora, Arch)
 - **macOS** (Intel and Apple Silicon)
-- **Windows** (10/11 with WSL recommended, native PowerShell also supported)
+- **Windows** (10/11 via WSL only)
 
 ## Installation Steps
 
@@ -75,21 +75,9 @@ ScrapAI uses SQLite by default (no database installation required). For producti
       </Tab>
       
       <Tab title="Windows">
-        <Warning>
-        **Recommended**: Use WSL (Windows Subsystem for Linux) for the best experience. Follow the Linux instructions after setting up WSL.
-        </Warning>
-        
-        For native Windows:
-        
-        1. Download Python 3.9+ from [python.org](https://www.python.org/downloads/windows/)
-        2. During installation, check **"Add Python to PATH"**
-        3. Install Git from [git-scm.com](https://git-scm.com/download/win)
-        
-        Verify in PowerShell:
-        ```powershell
-        python --version
-        git --version
-        ```
+        **Windows users must use WSL (Windows Subsystem for Linux).**
+
+        [Install WSL](https://learn.microsoft.com/en-us/windows/wsl/install), then follow the Linux instructions above.
       </Tab>
     </Tabs>
   </Step>
@@ -106,19 +94,9 @@ ScrapAI uses SQLite by default (no database installation required). For producti
   </Step>
   
   <Step title="Run setup">
-    <Tabs>
-      <Tab title="Linux/macOS">
-        ```bash
-        ./scrapai setup
-        ```
-      </Tab>
-      
-      <Tab title="Windows">
-        ```powershell
-        scrapai setup
-        ```
-      </Tab>
-    </Tabs>
+    ```bash
+    ./scrapai setup
+    ```
     
     The setup process will:
     
@@ -179,19 +157,9 @@ ScrapAI uses SQLite by default (no database installation required). For producti
   </Step>
   
   <Step title="Verify installation">
-    <Tabs>
-      <Tab title="Linux/macOS">
-        ```bash
-        ./scrapai verify
-        ```
-      </Tab>
-      
-      <Tab title="Windows">
-        ```powershell
-        scrapai verify
-        ```
-      </Tab>
-    </Tabs>
+    ```bash
+    ./scrapai verify
+    ```
     
     You should see:
     ```
@@ -214,68 +182,27 @@ ScrapAI uses SQLite by default (no database installation required). For producti
 
 ### Database Configuration
 
-By default, ScrapAI uses **SQLite** (file-based database, no setup required):
-
-```bash
-DATABASE_URL=sqlite:///scrapai.db
-```
-
-For production or larger scale, use **PostgreSQL**:
+ScrapAI uses **SQLite by default** (no setup required). For production, you can transfer your existing data to **PostgreSQL**:
 
 <Steps>
-  <Step title="Install PostgreSQL">
-    <Tabs>
-      <Tab title="Linux">
-        ```bash
-        sudo apt install postgresql postgresql-contrib
-        sudo systemctl start postgresql
-        ```
-      </Tab>
-      
-      <Tab title="macOS">
-        ```bash
-        brew install postgresql
-        brew services start postgresql
-        ```
-      </Tab>
-      
-      <Tab title="Windows">
-        Download from [postgresql.org](https://www.postgresql.org/download/windows/)
-      </Tab>
-    </Tabs>
-  </Step>
-  
-  <Step title="Create database and user">
+  <Step title="Get PostgreSQL">
+    Use a managed service (AWS RDS, DigitalOcean, Supabase) or install locally:
+
     ```bash
-    sudo -u postgres psql
-    ```
-    
-    ```sql
-    CREATE DATABASE scrapai;
-    CREATE USER scrapai_user WITH PASSWORD 'your_secure_password';
-    GRANT ALL PRIVILEGES ON DATABASE scrapai TO scrapai_user;
-    \q
+    # Linux: sudo apt install postgresql postgresql-contrib
+    # macOS: brew install postgresql
     ```
   </Step>
-  
+
   <Step title="Update .env">
-    Edit `.env` and replace the SQLite URL:
-    
     ```bash
-    DATABASE_URL=postgresql://scrapai_user:your_secure_password@localhost:5432/scrapai
+    DATABASE_URL=postgresql://user:password@host:5432/scrapai
     ```
   </Step>
-  
-  <Step title="Run migrations">
+
+  <Step title="Run migrations and transfer">
     ```bash
     ./scrapai db migrate
-    ```
-  </Step>
-  
-  <Step title="Transfer existing data (optional)">
-    If you have data in SQLite:
-    
-    ```bash
     ./scrapai db transfer sqlite:///scrapai.db
     ```
   </Step>
@@ -406,14 +333,6 @@ S3_BUCKET=your-bucket-name
     ```
   </Accordion>
   
-  <Accordion title="Windows: Scripts are disabled">
-    **Error**: `cannot be loaded because running scripts is disabled`
-    
-    **Solution**: Enable script execution in PowerShell:
-    ```powershell
-    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-    ```
-  </Accordion>
 </AccordionGroup>
 
 ## Upgrading

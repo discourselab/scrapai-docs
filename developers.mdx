@@ -3,29 +3,23 @@ title: For Developers
 description: ScrapAI is built for developers who want control without repetition
 ---
 
-ScrapAI doesn't replace developers. It removes the repetitive parts so you can focus on the hard problems.
+ScrapAI is a database-backed scraping orchestration layer built on Scrapy. AI agents generate JSON spider configs instead of writing Python files.
 
-## You're Always in the Loop
+## Analysis and Review
 
-The agent doesn't just run off and do things. During site analysis, it writes detailed notes in `sections.md`: what URL patterns it found, what sections the site has, what extraction strategy it chose and why. Plain language, easy to read.
+During site analysis, agents write detailed notes in `sections.md` documenting URL patterns, site structure, and extraction strategy. Review the analysis, correct assumptions, and refine the approach before finalizing configs.
 
-You can review at any point, correct the agent's assumptions, and bring your expertise into the process.
+## Full Control
 
-## Hand-Write, Edit, or Override Anything
-
-Write your own JSON configs from scratch. Edit AI-generated ones. Override settings per spider. Write custom callbacks with your own CSS/XPath selectors and data processors.
+Write configs by hand, edit generated ones, override settings per spider, or write custom callbacks with your own CSS/XPath selectors:
 
 ```bash
 ./scrapai spiders import my_config.json --project myproject
 ```
 
-The command works the same whether a human or an agent wrote it. The AI is a tool in your workflow, not a replacement for it.
+## Team Benefits
 
-## Consistency Across the Fleet
-
-When 5 developers write 100 spiders, you get 5 different styles, naming conventions, and quality levels. ScrapAI produces uniform configs with the same schema, validation, and structure.
-
-Easier to review, easier to debug, easier to onboard new people.
+All configs follow the same schema. Uniform structure across the fleet means easier code review, debugging, and onboarding. One developer can pick up another's spider without decoding personal style choices.
 
 ## Architecture
 
@@ -295,27 +289,9 @@ Your existing scrapers keep running while you verify. No big bang migration requ
 
 ## Security
 
-All input is validated through [Pydantic](https://docs.pydantic.dev/) schemas before it touches the database or the crawler:
+All input is validated through [Pydantic](https://docs.pydantic.dev/) schemas. Spider configs, URLs, and settings are validated before touching the database or crawler. SQL queries use parameterized bindings.
 
-- **Spider configs:** strict schema validation (`extra="forbid"`), spider names restricted to `^[a-zA-Z0-9_-]+$`, callback names validated with reserved names blocked
-- **URLs:** HTTP/HTTPS only, private IP and localhost blocking (127.0.0.1, 10.x, 172.16.x, 192.168.x, 169.254.x), 2048-char limit
-- **Settings:** whitelisted extractor names, bounded concurrency (1-32), bounded delays (0-60s)
-- **SQL:** all queries through SQLAlchemy ORM with parameterized bindings; `db query` validates table names against a whitelist; UPDATE/DELETE require row count confirmation
-
-### Agent Safety
-
-When you pair an AI agent with a scraping framework, the agent can potentially modify code, run arbitrary commands, and interact with untrusted web content. This isn't theoretical. In February 2026, an [OpenClaw agent deleted 200+ emails](https://techcrunch.com/2026/02/23/a-meta-ai-security-researcher-said-an-openclaw-agent-ran-amok-on-her-inbox/) after context compaction caused it to lose safety constraints.
-
-ScrapAI's approach: **the agent writes config, not code.**
-
-- With Claude Code, permission rules block all Python file modifications (`Write/Edit/Update/MultiEdit(**/*.py)`), sensitive files (`.env`, `secrets/**`), web access (`WebFetch`, `WebSearch`), and destructive shell commands at the tool level
-- The agent interacts only through a defined CLI (`./scrapai inspect`, `./scrapai spiders import`, etc.)
-- JSON configs are validated through Pydantic before import. Malformed configs, SSRF URLs, and injection attempts fail validation
-- At runtime, Scrapy executes deterministically with no AI in the loop
-
-The hard enforcement (allow/deny lists) is a Claude Code feature configured via `./scrapai setup`. Other agents get instructions but not enforcement. Only Claude Code guarantees the agent can't sidestep it.
-
-See [Comparison](/comparison#ai-agents--scraping-the-security-question) for the full analysis.
+ScrapAI uses a config-only architecture where agents write JSON, not code. See [Security-First Design](/concepts/security-first) for the full security model.
 
 ## Contributing
 

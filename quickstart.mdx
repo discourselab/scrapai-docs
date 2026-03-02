@@ -30,13 +30,7 @@ ScrapAI works on **Linux**, **macOS**, and **Windows**. The setup process is ide
     ./scrapai setup
     ```
     
-    This command:
-    - Creates a virtual environment (`.venv`)
-    - Installs all Python dependencies
-    - Installs Playwright Chromium browser
-    - Initializes SQLite database
-    - Creates `.env` configuration file
-    - Configures Claude Code permissions (if using AI agents)
+    This sets up your environment, installs dependencies, and initializes the database.
     
     <Tip>
     On **Windows**, use `scrapai setup` instead of `./scrapai setup`.
@@ -72,15 +66,10 @@ Let's import and run a pre-built spider for BBC News.
 <Steps>
   <Step title="Import the spider">
     ScrapAI includes example spiders in the `templates/` directory. Let's import the BBC News spider:
-    
+
     ```bash
     ./scrapai spiders import templates/news/bbc_co_uk/analysis/final_spider.json --project news
     ```
-    
-    This imports a spider configuration that knows how to:
-    - Find BBC news article URLs
-    - Extract titles, content, authors, and publish dates
-    - Handle multiple BBC sections (news, sport, food, etc.)
   </Step>
   
   <Step title="Run a test crawl">
@@ -104,12 +93,10 @@ Let's import and run a pre-built spider for BBC News.
   
   <Step title="View the results">
     Inspect the scraped data:
-    
+
     ```bash
     ./scrapai show bbc_co_uk --project news
     ```
-    
-    This displays all scraped items in a formatted table with titles, URLs, and timestamps.
   </Step>
   
   <Step title="Export the data">
@@ -136,51 +123,6 @@ Let's import and run a pre-built spider for BBC News.
     Exports are saved to the `data/` directory with timestamps.
   </Step>
 </Steps>
-
-## Understanding the Spider Config
-
-Let's look at what the BBC spider configuration contains:
-
-```json
-{
-  "name": "bbc_co_uk",
-  "source_url": "https://bbc.co.uk/",
-  "allowed_domains": ["bbc.co.uk", "www.bbc.co.uk"],
-  "start_urls": ["https://www.bbc.co.uk/"],
-  "rules": [
-    {
-      "allow": ["/news/articles/.*"],
-      "deny": ["/news/articles/.*#comments"],
-      "callback": "parse_article"
-    },
-    {
-      "allow": ["/sport/.*/articles/.*"],
-      "callback": "parse_article"
-    }
-  ],
-  "settings": {
-    "EXTRACTOR_ORDER": ["newspaper", "trafilatura"],
-    "DOWNLOAD_DELAY": 1,
-    "CONCURRENT_REQUESTS": 16,
-    "ROBOTSTXT_OBEY": true
-  }
-}
-```
-
-<Accordion title="Understanding the fields">
-  - **name**: Unique identifier for the spider
-  - **allowed_domains**: Only crawl URLs from these domains
-  - **start_urls**: Where the spider begins crawling
-  - **rules**: URL patterns to follow or extract data from
-    - **allow**: Regex patterns to match URLs
-    - **deny**: Regex patterns to exclude URLs
-    - **callback**: What to do with matched URLs (`parse_article` extracts article content)
-  - **settings**: Spider-specific configuration
-    - **EXTRACTOR_ORDER**: Try newspaper4k first, fall back to trafilatura
-    - **DOWNLOAD_DELAY**: Wait 1 second between requests (be polite)
-    - **CONCURRENT_REQUESTS**: Crawl up to 16 pages simultaneously
-    - **ROBOTSTXT_OBEY**: Respect the site's robots.txt
-</Accordion>
 
 ## Explore More Examples
 
@@ -244,10 +186,7 @@ For production crawls without limits:
 ./scrapai crawl bbc_co_uk --project news
 ```
 
-This enables:
-- **Checkpoint pause/resume**: Press Ctrl+C to pause, re-run to resume
-- **JSONL export**: Data automatically exported to `data/exports/` with timestamps
-- **Incremental crawling**: Skip already-scraped URLs on subsequent runs
+Production crawls support checkpoint pause/resume, automatic JSONL export, and incremental crawling.
 
 <Warning>
 Production crawls can run for hours or days. Use `--limit` for testing first.

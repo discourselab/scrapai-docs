@@ -76,12 +76,7 @@ description: 'The future of ScrapAI - from database-first scraping to a shared s
     # Returns: title, content, author, date in ~2 seconds
     ```
 
-    **Use cases:**
-    - Extract single article without full crawl
-    - RSS feed integration (scrape on publish)
-    - Real-time monitoring
-    - AI agents testing spider configs
-    - Manual URL paste → instant extraction
+    **Use cases:** RSS feed integration, real-time monitoring, AI agents testing configs
   </Card>
 </CardGroup>
 
@@ -104,25 +99,9 @@ description: 'The future of ScrapAI - from database-first scraping to a shared s
 
 ### Technical Stack
 
-<CodeGroup>
-```python FastAPI Framework
-# Async, fast, and modern Python framework
-from fastapi import FastAPI
-app = FastAPI()
-```
-
-```python API Key Auth
-# Secure authentication
-from fastapi.security import APIKeyHeader
-api_key_header = APIKeyHeader(name="X-API-Key")
-```
-
-```python Rate Limiting
-# Prevent abuse
-from slowapi import Limiter
-limiter = Limiter(key_func=get_remote_address)
-```
-</CodeGroup>
+- **FastAPI** - Async Python framework
+- **API Key Auth** - Secure authentication
+- **Rate Limiting** - Prevent abuse
 
 <Info>
   **Why first:** Enables AI agents (OpenClaw, Claude Code, etc.) to integrate immediately. Single-article API validates core value prop before building marketplace infrastructure.
@@ -195,10 +174,9 @@ limiter = Limiter(key_func=get_remote_address)
     - Focus on data, not selectors
   </Accordion>
   <Accordion title="For AI Agents" icon="robot">
-    - Skip Phase 1-4 spider building
+    - Skip spider building entirely
     - Instant data access - load config, start scraping
-    - API + 100 spiders = scrape 100 sites programmatically
-    - No wasted compute on selector discovery
+    - API + library = scrape hundreds of sites programmatically
   </Accordion>
 </AccordionGroup>
 
@@ -208,20 +186,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 ### Spider Publishing
 
-<Steps>
-  <Step title="Publish Command">
-    `./scrapai spiders publish <spider> --registry community`
-  </Step>
-  <Step title="Documentation">
-    Use the markdown template to document your spider
-  </Step>
-  <Step title="Examples">
-    Provide example URLs and expected output
-  </Step>
-  <Step title="License">
-    Choose a license (MIT, Apache, CC0)
-  </Step>
-</Steps>
+Publish your spiders with `./scrapai spiders publish <spider> --registry community`. Include documentation, example URLs, and choose a license (MIT, Apache, CC0).
 
 <Info>
   **Why after API:** API creates demand, library multiplies value. Early adopters use API with their spiders, then library makes API 10x more useful.
